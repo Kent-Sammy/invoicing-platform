@@ -178,8 +178,8 @@ Every template defines a **default accent**, used when no brand colour is chosen
 1. **Minimal:** existing baseline, unchanged.
 2. **Playful:** built (`4ff4b52`).
 3. **Professional:** built (`4ff4b52`).
-4. **Traditional:** built; rules-only stationery, navy accent, no signature area (no data). Awaiting review.
-5. Editorial.
+4. **Traditional:** built (`521ba4a`).
+5. **Editorial:** built; lime paper stays when a brand colour is chosen (the colour goes to display words and rules). Awaiting review.
 6. Elegant.
 
 Each template ships with the contract test and the sandbox fixture set: short, multi-page, inclusive tax, all payment options, no / square / wide logo, all-placeholder, and with and without a brand colour.

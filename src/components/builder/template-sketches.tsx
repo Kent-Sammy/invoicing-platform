@@ -5,7 +5,6 @@ import type { PlannedTemplateId } from "@/components/templates/registry";
 // replaced by a live render of the real template once it is built.
 // Units are millimetres on an A4 sheet (viewBox 210×297).
 
-const DISPLAY = "var(--font-bricolage), sans-serif";
 const SERIF = "var(--font-newsreader), serif";
 
 function Lines({ x, y, widths, gap = 7, fill, height = 2.6 }: {
@@ -17,38 +16,6 @@ function Lines({ x, y, widths, gap = 7, fill, height = 2.6 }: {
         <rect key={i} x={x} y={y + i * gap} width={width} height={height} rx={height / 2} fill={fill} />
       ))}
     </>
-  );
-}
-
-function Editorial() {
-  return (
-    <svg viewBox="0 0 210 297" className="size-full">
-      <rect width="210" height="297" fill="#d4f06b" />
-      <text x="16" y="44" fontFamily={DISPLAY} fontWeight="800" fontSize="33" letterSpacing="-1.6" fill="#111111">[STUDIO]</text>
-      <text x="16" y="70" fontFamily={DISPLAY} fontWeight="700" fontSize="6.5" fill="#111111">[7 Oct 2026]</text>
-      <text x="62" y="70" fontFamily={DISPLAY} fontWeight="700" fontSize="6.5" fill="#111111">[#INV-0001]</text>
-      <text x="194" y="72" textAnchor="end" fontFamily={DISPLAY} fontWeight="800" fontSize="17" letterSpacing="-0.6" fill="#111111">INVOICE</text>
-      <rect x="16" y="78" width="178" height="0.7" fill="#111111" />
-      {[0, 1].map((row) => (
-        <g key={row}>
-          <text x="16" y={90 + row * 20} fontFamily={DISPLAY} fontWeight="700" fontSize="5.5" fill="#111111">Project item</text>
-          <text x="24" y={97 + row * 20} fontFamily={SERIF} fontSize="5" fill="#2f3a0c">Detail line</text>
-          <text x="194" y={90 + row * 20} textAnchor="end" fontFamily={DISPLAY} fontWeight="700" fontSize="5.5" fill="#111111">3,500.00</text>
-        </g>
-      ))}
-      <Lines x={120} y={176} widths={[74, 74]} gap={6} fill="#111111" height={2} />
-      <text x="120" y="198" fontFamily={DISPLAY} fontWeight="800" fontSize="7" fill="#111111">BALANCE DUE</text>
-      <rect x="16" y="226" width="178" height="0.7" fill="#111111" />
-      <text x="16" y="246" fontFamily={DISPLAY} fontWeight="800" fontSize="19" letterSpacing="-0.8" fill="#111111">PAYMENT</text>
-      <Lines x={16} y={254} widths={[34, 44, 40]} gap={5} fill="#111111" height={1.8} />
-      <rect x="104" y="234" width="20" height="20" fill="#111111" />
-      <rect x="107" y="237" width="14" height="14" fill="#d4f06b" />
-      <Lines x={134} y={236} widths={[60, 56, 60, 48, 58]} gap={4} fill="#3b4a0f" height={1.4} />
-      <rect x="16" y="276" width="178" height="0.7" fill="#111111" />
-      {[0, 1, 2, 3].map((col) => (
-        <rect key={col} x={16 + col * 46} y="281" width="34" height="1.8" rx="0.9" fill="#111111" />
-      ))}
-    </svg>
   );
 }
 
@@ -93,6 +60,5 @@ function Elegant() {
 }
 
 export const TEMPLATE_SKETCHES: Record<PlannedTemplateId, () => React.JSX.Element> = {
-  editorial: Editorial,
   elegant: Elegant,
 };

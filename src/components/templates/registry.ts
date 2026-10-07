@@ -6,10 +6,11 @@ import { PLAYFUL_PALETTE } from "./playful/artwork";
 import { PlayfulTemplate } from "./playful/playful-template";
 import { ProfessionalTemplate } from "./professional/professional-template";
 import { TraditionalTemplate } from "./traditional/traditional-template";
+import { EditorialTemplate } from "./editorial/editorial-template";
 import type { TemplateDefinition } from "./types";
 
 /** Templates in the agreed lineup that are not built yet (decision 024/026). */
-export type PlannedTemplateId = "editorial" | "elegant";
+export type PlannedTemplateId = "elegant";
 
 export interface PlannedTemplate {
   id: PlannedTemplateId;
@@ -88,6 +89,24 @@ const traditional: TemplateDefinition = {
   component: TraditionalTemplate,
 };
 
+const editorial: TemplateDefinition = {
+  id: "editorial",
+  name: "Editorial",
+  description: "Art-directed & distinctive",
+  fonts: ["bricolage", "newsreader"],
+  // Acid-lime colour field: the template's signature paper, used whether or
+  // not a brand colour is chosen (decision 025).
+  surface: {
+    paper: "#d4f06b",
+    ink: "#111111",
+    inkMuted: "#3c4a10",
+    rule: "#11111140",
+    placeholder: "#6b7a2a",
+  },
+  defaultAccent: "#111111",
+  component: EditorialTemplate,
+};
+
 /**
  * The single source of truth for templates, in gallery order: every template
  * in the lineup, built or planned. Only built templates can be selected.
@@ -97,7 +116,7 @@ export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
   playful,
   professional,
   traditional,
-  { id: "editorial", name: "Editorial", description: "Art-directed & distinctive", status: "planned" },
+  editorial,
   { id: "elegant", name: "Elegant", description: "Premium & refined", status: "planned" },
 ];
 
