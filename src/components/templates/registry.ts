@@ -7,19 +7,8 @@ import { PlayfulTemplate } from "./playful/playful-template";
 import { ProfessionalTemplate } from "./professional/professional-template";
 import { TraditionalTemplate } from "./traditional/traditional-template";
 import { EditorialTemplate } from "./editorial/editorial-template";
+import { ElegantTemplate } from "./elegant/elegant-template";
 import type { TemplateDefinition } from "./types";
-
-/** Templates in the agreed lineup that are not built yet (decision 024/026). */
-export type PlannedTemplateId = "elegant";
-
-export interface PlannedTemplate {
-  id: PlannedTemplateId;
-  name: string;
-  description: string;
-  status: "planned";
-}
-
-export type TemplateCatalogEntry = TemplateDefinition | PlannedTemplate;
 
 const minimal: TemplateDefinition = {
   id: "minimal",
@@ -107,26 +96,40 @@ const editorial: TemplateDefinition = {
   component: EditorialTemplate,
 };
 
+const elegant: TemplateDefinition = {
+  id: "elegant",
+  name: "Elegant",
+  description: "Premium & refined",
+  fonts: ["bricolage", "newsreader"],
+  // Near-black full-bleed paper with light inks.
+  surface: {
+    paper: "#0d0d10",
+    ink: "#f2f2f3",
+    inkMuted: "#9d9da6",
+    rule: "#2b2b31",
+    placeholder: "#62626b",
+  },
+  // Warm white pay button when no brand colour is chosen; the header light
+  // band uses the template's own blue/ember glow in that case.
+  defaultAccent: "#ece8e1",
+  component: ElegantTemplate,
+};
+
 /**
- * The single source of truth for templates, in gallery order: every template
- * in the lineup, built or planned. Only built templates can be selected.
+ * The single source of truth for templates, in gallery order.
  */
-export const TEMPLATE_CATALOG: readonly TemplateCatalogEntry[] = [
+export const TEMPLATE_CATALOG: readonly TemplateDefinition[] = [
   minimal,
   playful,
   professional,
   traditional,
   editorial,
-  { id: "elegant", name: "Elegant", description: "Premium & refined", status: "planned" },
+  elegant,
 ];
 
-export function isAvailableTemplate(entry: TemplateCatalogEntry): entry is TemplateDefinition {
-  return !("status" in entry);
-}
-
-/** Built templates by id, derived from the catalog. */
+/** Templates by id, derived from the catalog. */
 export const TEMPLATES = Object.fromEntries(
-  TEMPLATE_CATALOG.filter(isAvailableTemplate).map((template) => [template.id, template]),
+  TEMPLATE_CATALOG.map((template) => [template.id, template]),
 ) as Record<TemplateId, TemplateDefinition>;
 
 /** Falls back to the default for unknown ids (e.g. from an older saved draft). */
