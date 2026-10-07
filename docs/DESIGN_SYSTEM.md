@@ -127,3 +127,13 @@ From the PRD:
 - **Logo:** sized by aspect ratio at a constant visual area (`logoSize`), so square marks and wide wordmarks carry equal weight. The editor's logo tile takes the logo's shape.
 - **Paper:** the sheet is rectangular, with a hairline edge and a soft shadow on the canvas. Never a rounded card.
 - **No tooling UI:** the Next.js dev indicator is disabled (`devIndicators: false`).
+
+## Template gallery (2026-10-07)
+
+- **Entry:** a "Template" row at the top of the editor ("Playful · Expressive & creative" + Change).
+- **Gallery:** takes over the editor column while open, so the live preview stays visible and updates on every selection. "Done" returns to the editor. The editor/preview split is unchanged.
+- **Cards:** a large live thumbnail (the user's own invoice rendered by the real template; sample content when empty), then the name and a short subtext. 3 columns when the column is at least 22rem wide, otherwise 2 (container query).
+- **States:** 1px border; hover strengthens the border; selected = foreground border plus a small check.
+- **Thumbnails:** built templates render live, with sample content shown in the template's real styling (not the grey sample treatment) so their identity reads at a glance. Templates still in development show a lightweight sketch of their approved direction (`template-sketches.tsx`), keep their real subtext, carry a small "Soon" tag and can't be selected. Each sketch is replaced by the live render when its template ships.
+- **Source of truth:** `TEMPLATE_CATALOG` in `components/templates/registry.ts`. Thumbnails are inert, hidden from assistive tech, and never affect printing.
+- **Selecting** changes only `branding.templateId`, which is autosaved with the draft.

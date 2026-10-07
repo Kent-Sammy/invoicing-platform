@@ -18,6 +18,8 @@ interface DocumentRendererProps {
    * are visible on screen only — they never print.
    */
   showPlaceholders?: boolean;
+  /** False for thumbnails: they must never influence the printed page. */
+  printable?: boolean;
 }
 
 /**
@@ -29,6 +31,7 @@ export function DocumentRenderer({
   document,
   logo = null,
   showPlaceholders = false,
+  printable = true,
 }: DocumentRendererProps) {
   const filled = showPlaceholders ? withPlaceholders(document) : null;
   const view = createDocumentView(filled?.document ?? document, {
@@ -43,7 +46,7 @@ export function DocumentRenderer({
   );
 
   return (
-    <DocumentPage surface={template.surface} theme={theme} font={template.fonts[0]}>
+    <DocumentPage surface={template.surface} theme={theme} font={template.fonts[0]} printable={printable}>
       <template.component view={view} theme={theme} />
     </DocumentPage>
   );

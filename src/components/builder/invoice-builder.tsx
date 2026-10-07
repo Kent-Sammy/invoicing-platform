@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
 
 import { BuilderHeader } from "./builder-header";
+import { TemplateGallery } from "./template-gallery";
 import { PreviewPane } from "./preview-pane";
 import { DEFAULT_SPLIT, readSplit, SplitHandle } from "./split-handle";
 
@@ -37,6 +38,8 @@ const EDITOR_WIDTH = "lg:w-[clamp(340px,calc(var(--split)*100%),calc(100%-481px)
 function Workspace() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const closePreview = useCallback(() => setPreviewOpen(false), []);
+  // The template gallery takes over the editor column; the preview stays visible.
+  const [galleryOpen, setGalleryOpen] = useState(false);
   // Workspace only renders in the browser (after the draft loads), so storage is available.
   const [split, setSplit] = useState(readSplit);
   const splitRef = useRef<HTMLDivElement>(null);
@@ -51,7 +54,11 @@ function Workspace() {
       >
         <main className={`w-full overflow-y-auto lg:shrink-0 ${EDITOR_WIDTH} print:hidden`}>
           <div className="mx-auto max-w-xl pb-8 lg:max-w-none">
-            <InvoiceEditor />
+            {galleryOpen ? (
+              <TemplateGallery onClose={() => setGalleryOpen(false)} />
+            ) : (
+              <InvoiceEditor onChooseTemplate={() => setGalleryOpen(true)} />
+            )}
           </div>
         </main>
         <SplitHandle containerRef={splitRef} split={split} onSplitChange={setSplit} />

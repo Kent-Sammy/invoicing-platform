@@ -69,6 +69,14 @@
   text-underline-offset: 0.25em;
 }
 
+/* Gallery thumbnails show sample content in the template's real styling. */
+.document-thumbnail .document-page [data-placeholder],
+.document-thumbnail .document-page p[data-placeholder],
+.document-thumbnail .document-page tr[data-placeholder] td {
+  color: revert-layer;
+  text-decoration: revert-layer;
+}
+
 /* Scales the A4 sheet to fit the preview pane on screen; disabled in print. */
 .document-scaler {
   transform-origin: top left;

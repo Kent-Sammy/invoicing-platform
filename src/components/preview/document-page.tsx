@@ -15,6 +15,8 @@ interface DocumentPageProps {
   surface: DocumentSurface;
   theme: DocumentTheme;
   font: DocumentFontId;
+  /** Set false for miniature renders so they never affect the printed page. */
+  printable?: boolean;
   children: ReactNode;
   className?: string;
 }
@@ -24,7 +26,14 @@ interface DocumentPageProps {
  * font as CSS variables. Sizing, the full-bleed print frame and page-break
  * rules live in `src/app/document.css`.
  */
-export function DocumentPage({ surface, theme, font, children, className }: DocumentPageProps) {
+export function DocumentPage({
+  surface,
+  theme,
+  font,
+  printable = true,
+  children,
+  className,
+}: DocumentPageProps) {
   const style = {
     "--doc-paper": surface.paper,
     "--doc-ink": surface.ink,
@@ -42,7 +51,7 @@ export function DocumentPage({ surface, theme, font, children, className }: Docu
     <article className={cn("document-page", className)} style={style}>
       {/* Printed pages are full-bleed (@page margin 0): the paper colour must
           cover the whole sheet, including space below the last line. */}
-      <style>{`@media print{html,body{background:${surface.paper} !important}}`}</style>
+      {printable && <style>{`@media print{html,body{background:${surface.paper} !important}}`}</style>}
       {children}
     </article>
   );

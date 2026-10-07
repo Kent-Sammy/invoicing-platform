@@ -19,7 +19,7 @@ import type { TemplateId } from "@/types/template";
 const TEMPLATE_IDS = Object.keys(TEMPLATES) as TemplateId[];
 
 export function DocumentSandbox() {
-  // ?long / ?inclusive / ?template=<id> / ?brand=none open those variants
+  // ?long / ?inclusive / ?template=<id> / ?brand=none|%23rrggbb open those variants
   // directly (useful for headless print checks).
   const searchParams = useSearchParams();
   const [templateId, setTemplateId] = useState<TemplateId>(() => {
@@ -27,6 +27,7 @@ export function DocumentSandbox() {
     return TEMPLATE_IDS.find((id) => id === requested) ?? "minimal";
   });
   const [brandChosen, setBrandChosen] = useState(() => searchParams.get("brand") !== "none");
+  const brandOverride = /^#[0-9a-f]{6}$/i.test(searchParams.get("brand") ?? "") ? searchParams.get("brand") : null;
   const [long, setLong] = useState(() => searchParams.has("long"));
   const [inclusive, setInclusive] = useState(() => searchParams.has("inclusive"));
   const [dark, setDark] = useState(false);
@@ -43,7 +44,7 @@ export function DocumentSandbox() {
     branding: {
       ...sample.branding,
       templateId,
-      brandColor: brandChosen ? sample.branding.brandColor : null,
+      brandColor: brandChosen ? (brandOverride ?? sample.branding.brandColor) : null,
       logo,
     },
   };
