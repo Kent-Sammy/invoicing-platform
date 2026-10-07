@@ -10,7 +10,7 @@ import type {
   DocumentTax,
   DocumentType,
   Party,
-  PaymentDetails,
+  PaymentOptions,
   PaymentTerms,
 } from "@/types/document";
 import type { TemplateId } from "@/types/template";
@@ -37,8 +37,13 @@ export function createItem(): DocumentItem {
   return { id: createId(), description: "", quantity: 1, unitPrice: 0 };
 }
 
-export function createPaymentDetails(): PaymentDetails {
-  return { bankName: "", accountName: "", accountNumber: "", instructions: "" };
+/** All payment options start off: a document needs none to be valid. */
+export function createPaymentOptions(): PaymentOptions {
+  return {
+    bankTransfer: { enabled: false, bankName: "", accountName: "", accountNumber: "", instructions: "" },
+    paymentLink: { enabled: false, url: "", showButton: true },
+    qrCode: { enabled: false },
+  };
 }
 
 /** Tax starts disabled; when the user enables it, the country's suggestion is pre-filled. */
@@ -82,7 +87,7 @@ export function createDocument(
     items: [createItem()],
     discount: null,
     tax: createTax(country),
-    paymentDetails: createPaymentDetails(),
+    paymentOptions: createPaymentOptions(),
     notes: "",
     terms: "",
     branding: {

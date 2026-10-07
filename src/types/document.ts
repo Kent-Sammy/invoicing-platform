@@ -73,11 +73,36 @@ export type PaymentTerms =
  * Bank details the business chooses to print so the client can pay.
  * Display text, not payment credentials. Empty fields are omitted.
  */
-export interface PaymentDetails {
+export interface BankTransferOption {
+  enabled: boolean;
   bankName: string;
   accountName: string;
   accountNumber: string;
   instructions: string;
+}
+
+/** Any payment URL (Paystack, Flutterwave, Stripe, a bank page…). Provider-agnostic. */
+export interface PaymentLinkOption {
+  enabled: boolean;
+  url: string;
+  /** Show a "Pay invoice" button linking to the URL. */
+  showButton: boolean;
+}
+
+/** A QR code encoding the payment link — never configured separately from it. */
+export interface QrCodeOption {
+  enabled: boolean;
+}
+
+/**
+ * How the client can pay. Each method is independent and optional; a
+ * document with none enabled is perfectly valid. New methods (provider
+ * integrations, payment status) are added as further keys.
+ */
+export interface PaymentOptions {
+  bankTransfer: BankTransferOption;
+  paymentLink: PaymentLinkOption;
+  qrCode: QrCodeOption;
 }
 
 export interface DocumentBranding {
@@ -105,7 +130,7 @@ export interface BusinessDocument {
   items: DocumentItem[];
   discount: Discount | null;
   tax: DocumentTax;
-  paymentDetails: PaymentDetails;
+  paymentOptions: PaymentOptions;
   notes: string;
   terms: string;
   branding: DocumentBranding;

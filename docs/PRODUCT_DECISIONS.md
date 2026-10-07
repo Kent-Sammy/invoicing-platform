@@ -166,7 +166,7 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
 
 ## 014 — Dark mode: chrome only, paper always white
 
-**Status:** Decided by product owner · 2026-10-07
+**Status:** Decided by product owner · 2026-10-07 · **"Paper always white" superseded by 024.** App dark mode still never affects the document.
 
 - App tokens in `globals.css` have light and `.dark` values (shadcn's class-based setup). No theme toggle or `next-themes` dependency yet.
 - The document defines its own paper tokens on `.document-page` (`--doc-paper`, `--doc-ink`, `--doc-ink-muted`, `--doc-rule`, `--doc-brand`) with `color-scheme: light`. Templates use only `doc-*` colours, never app tokens. Verified: with dark chrome, the paper stays white.
@@ -246,6 +246,57 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
 - v1 has no "Page X of Y" and no page-break markers in the live preview. Browser headers and footers are left to the user's print settings.
 - The renderer is already multi-page capable: content flows across A4 pages, table headers repeat, rows and summary blocks (totals, payment details, notes) never split. Verified by printing a 48-line tax-inclusive invoice to a 3-page PDF.
 
+## 022 — Payment options (instructions, link, QR) — no processing
+
+**Status:** Decided by product owner · 2026-10-07
+
+- `paymentOptions: { bankTransfer, paymentLink, qrCode }` replaces `paymentDetails`. Each option is independent and off by default; an invoice with none is valid. New methods (provider integrations, payment status) become new keys.
+- The payment link is **provider-agnostic**: any URL, with no provider branding or APIs. `normalizePaymentUrl` accepts only http(s) (adding `https://` when missing) and rejects `javascript:`, `data:` and similar, so only safe URLs become links or QR codes.
+- The QR code is always derived from the payment link, never configured separately. The user chooses what the invoice shows: **Pay button**, **QR code** or **both**.
+- The "Pay invoice" button is a real link: clickable in the live preview and in the saved PDF. The QR code ("Scan to pay") covers printed copies. Both use the brand colour or black, with no provider logos.
+- QR encoding uses `uqr` (MIT, zero dependencies): medium error correction, drawn as one SVG path so it stays crisp in print. Verified by decoding the rendered code in the browser.
+- Stored drafts are now schema v3. `lib/persistence/migrations.ts` upgrades v2 drafts (moving `paymentDetails` into `bankTransfer`) instead of discarding them. This is the pattern for future model changes.
+
+## 023 — Resizable editor / preview split
+
+**Status:** Decided by product owner · 2026-10-07
+
+- Desktop only (≥1024px); mobile keeps the editor plus full-screen preview.
+- The editor width is `clamp(340px, split × 100%, 100% − 481px)`, so neither pane can collapse (preview ≥ 480px). The ratio is saved in localStorage (`invoice-platform:ui:editor-split`) and restored on load.
+- No library: pointer capture on a hairline divider. Drags update a CSS variable directly (no React re-render per frame), and the preview rescales live. The ratio is committed on release.
+- The handle is discoverable but quiet: a col-resize cursor, a hairline that strengthens on hover, a grip that appears on hover. It's keyboard accessible (←/→ nudge, Enter resets) and double-click resets to the default 30%.
+
+## 024 — Template lineup and visual freedom
+
+**Status:** Decided by product owner · 2026-10-07 · supersedes the "paper always white" part of 014
+
+- **The six templates:** Minimal, Playful, Professional, Traditional, Editorial, Elegant. Modern and Bold are dropped; "bold" is a technique any template may use.
+- **Paper belongs to the template:** white, tinted, coloured or dark. There's no universal white-paper rule, and no separate print-friendly theme yet; we optimise for screen and PDF.
+- **Edge-to-edge colour** is allowed when it's part of a template's identity. It must not become a pattern every template uses.
+- **Built-in decorative artwork** belongs to the template: shapes and motifs (Playful), typographic or graphic treatments (Editorial), abstract or cinematic visuals (Elegant). Users can't edit it in v1, and there is no visual editor.
+- **What users customise is unchanged:** logo, brand colour, business information, invoice data.
+- **Signature and subject are not added to the document model.** A template may include a signature area only if it collapses when there's no signature data, which today means it never shows.
+- **Principle:** references inspire the visual language; they never dictate the data model. Templates are designed around what the product already supports.
+- **Technical consequence (spiked in headless Chrome 155):** full-bleed paper requires `@page { margin: 0 }` with the 18mm margins recreated inside the document on every printed page. Details are in `TEMPLATE_DIRECTIONS.md` §1.
+
+## 025 — Brand colour defaults, Playful palette, Traditional, fonts
+
+**Status:** Decided by product owner · 2026-10-07
+
+- **Brand colour becomes optional.** `branding.brandColor: string | null`; `null` means "no colour chosen" and is no longer conflated with near-black.
+  - With no colour chosen, each template uses its own designed default accent (Editorial: acid lime; Elegant: its own dark treatment).
+  - With a colour chosen, the template decides where it's applied. It never automatically becomes the whole invoice's paper.
+  - Implementation: draft schema v4 migrates the old default `#171717` to `null` (no colour picker has shipped, so no user can have chosen it).
+- **Playful motif palette** is fixed and template-owned. The brand colour may drive the primary accent only; decorative motifs always use the template palette.
+- **Traditional** is an original classic-stationery design with no reference image (spec in `TEMPLATE_DIRECTIONS.md` §4.3). Its signature area follows decision 024: it collapses while there's no signature data.
+- **Document fonts:** Bricolage Grotesque and Newsreader, assigned per template:
+  - Minimal, Playful, Professional, Traditional: **Bricolage Grotesque**;
+  - Editorial, Elegant: **Newsreader + Bricolage Grotesque**.
+
+  Each template stays internally consistent; no other document fonts without a strong reason. Geist remains the **app UI** font only.
+  - Both families were verified to contain ₦ $ £ €. ₦ (U+20A6) is only in the `latin-ext` subset, so both must be loaded with `subsets: ["latin", "latin-ext"]` or naira amounts silently fall back to another font.
+  - Bricolage Grotesque is loaded with its optical-size axis, so body text uses its calmer small-size design.
+
 ---
 
 ## Open decisions
@@ -254,4 +305,5 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
 - **Following a custom number scheme:** if a user renames `INV-0003` to `KDS-2026-001`, should the next invoice continue as `KDS-2026-002`? Currently the guest counter continues as `INV-0004`.
 - **Carrying details to the next invoice:** reset currently clears everything, including business details, payment details and the logo. For repeat guest use, should a new invoice keep the business, payment details and logo?
 - **More countries:** NG, GB and US are configured. Which others at launch?
+- **Brand colour contrast:** the "Pay invoice" button uses the brand colour with white text. When brand-colour picking ships, very light colours will need a contrast fallback.
 - **Rounding mode:** half away from zero. Confirm this matches what Nigerian accountants expect (vs. banker's rounding).

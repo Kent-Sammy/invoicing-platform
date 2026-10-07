@@ -48,7 +48,7 @@ Rules:
 ## Colors
 
 - **App palette (placeholder):** shadcn `neutral` in OKLCH.
-- **Paper (placeholder values):** white paper, zinc-based ink, muted ink and rules.
+- **Paper:** each template owns its paper and ink tokens (white, tinted, coloured or dark), per decision 024. Minimal uses white paper with zinc-based ink.
 - **Decided (PRD):** the user's brand colour applies to the document only, never to the app UI.
 - _Not yet decided:_ final app palette and accent colour.
 
@@ -85,7 +85,7 @@ Rules:
 ## Dark mode
 
 - **Decided (PRD):** dark mode applies to app chrome only (editor, navigation, controls, settings).
-- **Decided (PRD):** the invoice document is **always** a white paper document and is never themed.
+- **Decided:** the app's dark mode never affects the invoice. The invoice's paper belongs to its template (decision 024): Elegant may be dark and Editorial coloured, whatever the app theme.
 - **Current state:** tokens exist for light and `.dark` (class-based). There is no theme toggle yet.
 
 ## Print
@@ -114,3 +114,16 @@ From the PRD:
 | Mobile | Single-column editing with an easy Preview mode. Intentionally designed, not a shrunk desktop. |
 
 - _Not yet decided:_ exact breakpoints, the mobile preview mechanism (toggle, sheet, or tab), and how the A4 sheet scales to fit narrow preview panes.
+
+## Invoice builder (v1 refinement, 2026-10-07)
+
+- **Layout:** the builder lives at `/create` (`/` redirects there until a landing page exists).
+  - Desktop (≥1024px): editor (400–420px) | live preview on the `canvas` workspace. The preview is the visual hero; the A4 sheet scales to fill its pane, up to 1.25×.
+  - Below 1024px: single-column editor with a pinned total and a **Preview** button that opens the document full-screen.
+- **Editor hierarchy:** Your business → Client → Invoice details → **Items** (focal section, tinted) → Adjustments → Payment → Notes.
+  - Section labels are small uppercase captions; controls are 32px tall with 13px text (16px on mobile so iOS doesn't zoom).
+  - Progressive disclosure: only essential fields are visible. Secondary fields sit behind quiet "+ Add …" links (contact details, tax information, address & phone). Payment and Notes collapse to a single line until opened. Anything with existing content opens automatically.
+- **Placeholders:** empty fields show marked sample content (grey, dotted underline) in the preview so it never looks broken. Sample content never prints.
+- **Logo:** sized by aspect ratio at a constant visual area (`logoSize`), so square marks and wide wordmarks carry equal weight. The editor's logo tile takes the logo's shape.
+- **Paper:** the sheet is rectangular, with a hairline edge and a soft shadow on the canvas. Never a rounded card.
+- **No tooling UI:** the Next.js dev indicator is disabled (`devIndicators: false`).

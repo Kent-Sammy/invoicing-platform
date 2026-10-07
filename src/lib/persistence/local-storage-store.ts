@@ -2,12 +2,9 @@ import { isBusinessDocument } from "@/lib/documents";
 import type { BusinessDocument } from "@/types/document";
 
 import type { DocumentStore } from "./document-store";
+import { migrateDocument, SCHEMA_VERSION } from "./migrations";
 
 export const GUEST_DRAFT_KEY = "invoice-platform:guest-draft";
-
-// Bump when BusinessDocument changes shape incompatibly; older drafts are then
-// discarded (or migrated, once we have real users' drafts worth keeping).
-const SCHEMA_VERSION = 2;
 
 interface StoredDraft {
   version: number;
@@ -33,11 +30,12 @@ export function createLocalStorageDocumentStore(
           typeof stored === "object" &&
           stored !== null &&
           "version" in stored &&
-          stored.version === SCHEMA_VERSION &&
-          "document" in stored &&
-          isBusinessDocument(stored.document)
+          typeof stored.version === "number" &&
+          "document" in stored
         ) {
-          return stored.document;
+          // Older drafts are upgraded; anything unrecognisable is ignored.
+          const document = migrateDocument(stored.version, stored.document);
+          if (isBusinessDocument(document)) return document;
         }
       } catch {
         // Corrupt JSON: fall through and treat as no draft.

@@ -1,9 +1,11 @@
 import { calculateTotals, type DocumentTotals } from "@/lib/calculations";
 import { formatISODate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
+import { createQrCode, displayPaymentUrl, normalizePaymentUrl, type QrCode } from "@/lib/payments";
 import type { BusinessDocument, Party } from "@/types/document";
 
 import { getDocumentType, type DocumentTypeDefinition } from "./definitions";
+import type { PlaceholderField } from "./placeholders";
 
 export interface DocumentViewItem {
   id: string;
@@ -18,9 +20,25 @@ export interface DocumentViewAmount {
   amount: string;
 }
 
+/** A resolved logo image with its intrinsic size (for aspect-aware layout). */
+export interface DocumentLogo {
+  src: string;
+  width: number;
+  height: number;
+}
+
 export interface DocumentViewField {
   label: string;
   value: string;
+}
+
+export interface DocumentViewPayment {
+  title: string;
+  bankTransfer: { title: string; fields: DocumentViewField[]; instructions: string } | null;
+  /** "Pay invoice" call to action. */
+  link: { url: string; label: string; display: string } | null;
+  /** QR code of the payment link, for printed copies. */
+  qr: { code: QrCode; caption: string; display: string } | null;
 }
 
 /**
@@ -42,22 +60,31 @@ export interface DocumentView {
   total: DocumentViewAmount;
   /** Tax-inclusive mode only: "VAT (7.5%) included" with net and tax amounts. */
   taxBreakdown: { note: string; lines: DocumentViewAmount[] } | null;
-  /** Null when the user has not filled any payment details. */
-  paymentDetails: { title: string; fields: DocumentViewField[]; instructions: string } | null;
+  /** Null when no payment option is enabled and filled in. */
+  payment: DocumentViewPayment | null;
   notes: string;
   terms: string;
-  branding: { brandColor: string; logoSrc: string | null };
+  branding: { brandColor: string; logo: DocumentLogo | null };
+  /** Fields showing sample content; templates mark them, print omits them. */
+  placeholders: ReadonlySet<PlaceholderField>;
 }
 
 interface DocumentViewOptions {
   totals?: DocumentTotals;
   /** Resolved logo image (the document stores only a reference). */
-  logoSrc?: string | null;
+  logo?: DocumentLogo | null;
+  placeholders?: ReadonlySet<PlaceholderField>;
 }
+
+const NO_PLACEHOLDERS: ReadonlySet<PlaceholderField> = new Set();
 
 export function createDocumentView(
   document: BusinessDocument,
-  { totals = calculateTotals(document), logoSrc = null }: DocumentViewOptions = {},
+  {
+    totals = calculateTotals(document),
+    logo = null,
+    placeholders = NO_PLACEHOLDERS,
+  }: DocumentViewOptions = {},
 ): DocumentView {
   const { labels, title } = getDocumentType(document.type);
   // Dates and plain numbers follow the business locale; money follows the currency.
@@ -94,16 +121,7 @@ export function createDocumentView(
     }
   }
 
-  const details = document.paymentDetails;
-  const fields = [
-    { label: labels.bankName, value: details.bankName },
-    { label: labels.accountName, value: details.accountName },
-    { label: labels.accountNumber, value: details.accountNumber },
-  ].filter((field) => field.value.trim() !== "");
-  const paymentDetails =
-    fields.length > 0 || details.instructions.trim() !== ""
-      ? { title: labels.paymentDetails, fields, instructions: details.instructions }
-      : null;
+  const payment = createPaymentView(document, labels);
 
   return {
     title,
@@ -123,9 +141,35 @@ export function createDocumentView(
     summary,
     total: { label: labels.total, amount: money(totals.total) },
     taxBreakdown,
-    paymentDetails,
+    payment,
     notes: document.notes,
     terms: document.terms,
-    branding: { brandColor: document.branding.brandColor, logoSrc },
+    branding: { brandColor: document.branding.brandColor, logo },
+    placeholders,
   };
+}
+
+function createPaymentView(
+  document: BusinessDocument,
+  labels: DocumentTypeDefinition["labels"],
+): DocumentViewPayment | null {
+  const { bankTransfer, paymentLink, qrCode } = document.paymentOptions;
+
+  const fields = [
+    { label: labels.bankName, value: bankTransfer.bankName },
+    { label: labels.accountName, value: bankTransfer.accountName },
+    { label: labels.accountNumber, value: bankTransfer.accountNumber },
+  ].filter((field) => field.value.trim() !== "");
+  const bank =
+    bankTransfer.enabled && (fields.length > 0 || bankTransfer.instructions.trim() !== "")
+      ? { title: labels.bankTransfer, fields, instructions: bankTransfer.instructions }
+      : null;
+
+  // Only a valid http(s) URL ever becomes a link or a QR code.
+  const url = paymentLink.enabled ? normalizePaymentUrl(paymentLink.url) : null;
+  const display = url ? displayPaymentUrl(url) : "";
+  const link = url && paymentLink.showButton ? { url, label: labels.payInvoice, display } : null;
+  const qr = url && qrCode.enabled ? { code: createQrCode(url), caption: labels.scanToPay, display } : null;
+
+  return bank || link || qr ? { title: labels.payment, bankTransfer: bank, link, qr } : null;
 }

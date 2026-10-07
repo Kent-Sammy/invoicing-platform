@@ -1,137 +1,291 @@
 import type { ReactNode } from "react";
 
-import type { Party } from "@/types/document";
+import {
+  logoSize,
+  type DocumentView,
+  type DocumentViewPayment,
+  type PlaceholderField,
+} from "@/lib/documents";
 
 import type { TemplateProps } from "../types";
 
-// Structural placeholder: proves the data → view → template → print pipeline.
-// The Minimal template's real visual design is built in the template phase.
+// Minimal: a quiet, typographic invoice. Sizes are in pt/mm so the screen
+// preview and the printed A4 page match.
 
 function Eyebrow({ children }: { children: ReactNode }) {
-  return <p className="text-doc-ink-muted text-[8pt] uppercase tracking-wide">{children}</p>;
+  return (
+    <p className="text-doc-ink-muted mb-[1.8mm] text-[7pt] font-medium tracking-[0.1em] uppercase">
+      {children}
+    </p>
+  );
 }
 
-function PartyBlock({ label, party }: { label: string; party: Party }) {
+/** A line of text that may be sample content (marked on screen, omitted in print). */
+function Line({
+  view,
+  field,
+  value,
+  className,
+}: {
+  view: DocumentView;
+  field: PlaceholderField;
+  value: string;
+  className?: string;
+}) {
+  if (!value) return null;
   return (
-    <div className="space-y-0.5">
-      <Eyebrow>{label}</Eyebrow>
-      <p className="font-medium">{party.name}</p>
-      <p className="text-doc-ink-muted whitespace-pre-line">{party.address}</p>
-      <p className="text-doc-ink-muted">{party.email}</p>
-      <p className="text-doc-ink-muted">{party.phone}</p>
-      {party.taxId && <p className="text-doc-ink-muted">{party.taxId}</p>}
+    <p className={className} data-placeholder={view.placeholders.has(field) || undefined}>
+      {value}
+    </p>
+  );
+}
+
+function PartyBlock({ view, party }: { view: DocumentView; party: "business" | "client" }) {
+  const data = view[party];
+  // An entirely sample block (label included) disappears from print.
+  const allSample = view.placeholders.has(`${party}.name`) && !data.taxId && (party === "business" || !data.phone);
+  return (
+    <div data-placeholder={(allSample && view.placeholders.has(`${party}.email`)) || undefined}>
+      <Eyebrow>{party === "business" ? view.labels.from : view.labels.to}</Eyebrow>
+      <Line view={view} field={`${party}.name`} value={data.name} className="text-[10pt] font-semibold" />
+      <div className="text-doc-ink-muted mt-[0.8mm]">
+        <Line view={view} field={`${party}.address`} value={data.address} className="whitespace-pre-line" />
+        <Line view={view} field={`${party}.email`} value={data.email} />
+        {party === "business" && <Line view={view} field="business.phone" value={data.phone} />}
+        {party === "client" && data.phone && <p>{data.phone}</p>}
+        {data.taxId && <p>{data.taxId}</p>}
+      </div>
     </div>
+  );
+}
+
+function Header({ view }: { view: DocumentView }) {
+  const { logo } = view.branding;
+  const size = logo && logoSize(logo.width, logo.height);
+  return (
+    <header className="flex items-start justify-between gap-[10mm]">
+      <div className="min-w-0 pt-[1mm]">
+        {logo && size ? (
+          // eslint-disable-next-line @next/next/no-img-element -- locally stored data URL
+          <img
+            src={logo.src}
+            alt=""
+            className="object-contain object-left"
+            style={{ width: `${size.width}mm`, height: `${size.height}mm` }}
+          />
+        ) : (
+          <Line
+            view={view}
+            field="business.name"
+            value={view.business.name}
+            className="text-[13pt] leading-tight font-semibold tracking-[-0.015em]"
+          />
+        )}
+      </div>
+      <div className="shrink-0 text-right">
+        <h1 className="text-doc-brand text-[24pt] leading-none font-semibold tracking-[-0.03em]">
+          {view.title}
+        </h1>
+        <p className="text-doc-ink-muted mt-[2.5mm] text-[9.5pt] tabular-nums">{view.number}</p>
+      </div>
+    </header>
+  );
+}
+
+function Totals({ view, sample }: { view: DocumentView; sample: true | undefined }) {
+  return (
+    <div className="document-keep-together mt-[5mm] ml-auto w-[80mm] tabular-nums" data-placeholder={sample}>
+      <dl className="grid grid-cols-[1fr_auto] gap-y-[1.4mm]">
+        {view.summary.map((row) => (
+          <div key={row.label} className="contents">
+            <dt className="text-doc-ink-muted">{row.label}</dt>
+            <dd className="text-right">{row.amount}</dd>
+          </div>
+        ))}
+        <dt className="border-doc-ink mt-[1.5mm] border-t pt-[2.5mm] text-[10.5pt] font-semibold">
+          {view.total.label}
+        </dt>
+        <dd className="border-doc-ink mt-[1.5mm] border-t pt-[2.5mm] text-right text-[10.5pt] font-semibold">
+          {view.total.amount}
+        </dd>
+      </dl>
+      {view.taxBreakdown && (
+        <dl className="text-doc-ink-muted mt-[3mm] grid grid-cols-[1fr_auto] gap-y-[0.6mm] text-[8pt]">
+          <dt className="col-span-2">{view.taxBreakdown.note}</dt>
+          {view.taxBreakdown.lines.map((row) => (
+            <div key={row.label} className="contents">
+              <dt>{row.label}</dt>
+              <dd className="text-right">{row.amount}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
+}
+
+function QrCodeImage({ qr }: { qr: NonNullable<DocumentViewPayment["qr"]> }) {
+  const { size, path } = qr.code;
+  return (
+    <svg
+      viewBox={`0 0 ${size} ${size}`}
+      className="size-[22mm] shrink-0"
+      shapeRendering="crispEdges"
+      role="img"
+      aria-label={`${qr.caption}: ${qr.display}`}
+    >
+      <rect width={size} height={size} fill="#ffffff" />
+      <path d={path} fill="#000000" />
+    </svg>
+  );
+}
+
+function PaymentSection({ payment }: { payment: DocumentViewPayment }) {
+  const { bankTransfer, link, qr } = payment;
+  const online = link || qr;
+  return (
+    <section className="document-keep-together mt-[8mm]">
+      <Eyebrow>{payment.title}</Eyebrow>
+      <div className="mt-[1mm] grid grid-cols-2 gap-x-[12mm] gap-y-[6mm]">
+        {bankTransfer && (
+          <div>
+            <p className="mb-[1.2mm] font-semibold">{bankTransfer.title}</p>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-[5mm] gap-y-[0.8mm]">
+              {bankTransfer.fields.map((field) => (
+                <div key={field.label} className="contents">
+                  <dt className="text-doc-ink-muted">{field.label}</dt>
+                  <dd className="font-medium tabular-nums">{field.value}</dd>
+                </div>
+              ))}
+            </dl>
+            {bankTransfer.instructions && (
+              <p className="text-doc-ink-muted mt-[2mm] whitespace-pre-line">{bankTransfer.instructions}</p>
+            )}
+          </div>
+        )}
+        {online && (
+          <div className="flex items-start gap-[5mm]">
+            {qr && <QrCodeImage qr={qr} />}
+            <div className="min-w-0">
+              {link ? (
+                <>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-doc-brand text-doc-paper inline-flex items-center gap-[1.5mm] rounded-[1.2mm] px-[4.5mm] py-[2.2mm] font-semibold no-underline"
+                  >
+                    {link.label}
+                    <span aria-hidden>→</span>
+                  </a>
+                  <p className="text-doc-ink-muted mt-[2mm] text-[8pt] [overflow-wrap:anywhere]">{link.display}</p>
+                </>
+              ) : (
+                <p className="font-semibold">{qr?.caption}</p>
+              )}
+              {qr && link && <p className="text-doc-ink-muted mt-[0.5mm] text-[8pt]">{qr.caption}</p>}
+              {qr && !link && <p className="text-doc-ink-muted mt-[1mm] text-[8pt] [overflow-wrap:anywhere]">{qr.display}</p>}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Notes({ view }: { view: DocumentView }) {
+  const { notes, terms, labels } = view;
+  if (!notes && !terms) return null;
+  return (
+    <section className="document-keep-together mt-[6mm] grid grid-cols-2 gap-x-[12mm]">
+      {notes && (
+        <div>
+          <Eyebrow>{labels.notes}</Eyebrow>
+          <p className="whitespace-pre-line">{notes}</p>
+        </div>
+      )}
+      {terms && (
+        <div>
+          <Eyebrow>{labels.terms}</Eyebrow>
+          <p className="text-doc-ink-muted whitespace-pre-line">{terms}</p>
+        </div>
+      )}
+    </section>
   );
 }
 
 export function MinimalTemplate({ view }: TemplateProps) {
   const { labels } = view;
+  const sample = view.placeholders.has("items") || undefined;
 
   return (
-    <div className="space-y-10 text-[9.5pt] leading-relaxed">
-      <header className="flex items-start justify-between gap-8">
-        <div>
-          {view.branding.logoSrc && (
-            // eslint-disable-next-line @next/next/no-img-element -- locally stored data URL
-            <img src={view.branding.logoSrc} alt="" className="mb-4 max-h-12 w-auto" />
-          )}
-          <h1 className="text-doc-brand text-[20pt] font-semibold">{view.title}</h1>
-        </div>
-        <dl className="grid grid-cols-[auto_auto] gap-x-6 gap-y-0.5 text-right">
-          <dt className="text-doc-ink-muted">{labels.number}</dt>
-          <dd>{view.number}</dd>
+    // 260mm = A4 height minus both 18mm margins, minus 1mm so print rounding
+    // never pushes the footer onto an empty second page.
+    <div className="text-doc-ink flex min-h-[260mm] flex-col text-[9.5pt] leading-[1.5]">
+      <Header view={view} />
+
+      <section className="mt-[9mm] grid grid-cols-[1fr_1fr_auto] gap-x-[8mm]">
+        <PartyBlock view={view} party="client" />
+        <PartyBlock view={view} party="business" />
+        <dl className="grid grid-cols-[auto_auto] content-start gap-x-[5mm] gap-y-[0.8mm] pt-[4.6mm] text-right tabular-nums">
           <dt className="text-doc-ink-muted">{labels.issueDate}</dt>
           <dd>{view.issueDate}</dd>
           <dt className="text-doc-ink-muted">{labels.dueDate}</dt>
-          <dd>{view.dueDate}</dd>
+          <dd className="font-medium">{view.dueDate}</dd>
         </dl>
-      </header>
-
-      <section className="grid grid-cols-2 gap-8">
-        <PartyBlock label={labels.from} party={view.business} />
-        <PartyBlock label={labels.to} party={view.client} />
       </section>
 
-      <table className="w-full border-collapse">
+      <section
+        className="border-doc-rule mt-[8mm] flex items-end justify-between border-y py-[3.5mm]"
+        data-placeholder={sample}
+      >
+        <div>
+          <Eyebrow>{labels.amountDue}</Eyebrow>
+          <p className="text-[20pt] leading-none font-semibold tracking-[-0.025em] tabular-nums">
+            {view.total.amount}
+          </p>
+        </div>
+        <p className="text-doc-ink-muted">
+          {labels.dueDate} <span className="text-doc-ink font-medium">{view.dueDate}</span>
+        </p>
+      </section>
+
+      <table className="mt-[7mm] w-full border-collapse" data-placeholder={sample}>
         <thead>
-          <tr className="border-doc-rule text-doc-ink-muted border-b text-left">
-            <th className="py-2 font-normal">{labels.description}</th>
-            <th className="py-2 pl-4 text-right font-normal">{labels.quantity}</th>
-            <th className="py-2 pl-4 text-right font-normal">{labels.unitPrice}</th>
-            <th className="py-2 pl-4 text-right font-normal">{labels.amount}</th>
+          <tr className="border-doc-rule text-doc-ink-muted border-b text-[7pt] tracking-[0.1em] uppercase">
+            <th className="pb-[2.2mm] text-left font-medium">{labels.description}</th>
+            <th className="w-[16mm] pb-[2.2mm] text-right font-medium">{labels.quantity}</th>
+            <th className="w-[30mm] pb-[2.2mm] text-right font-medium">{labels.unitPrice}</th>
+            <th className="w-[32mm] pb-[2.2mm] text-right font-medium">{labels.amount}</th>
           </tr>
         </thead>
         <tbody className="tabular-nums">
           {view.items.map((item) => (
-            <tr key={item.id} className="border-doc-rule border-b">
-              <td className="py-2 pr-4 whitespace-pre-line">{item.description}</td>
-              <td className="py-2 pl-4 text-right">{item.quantity}</td>
-              <td className="py-2 pl-4 text-right">{item.unitPrice}</td>
-              <td className="py-2 pl-4 text-right">{item.amount}</td>
+            <tr key={item.id} className="border-doc-rule border-b align-top" data-placeholder={sample}>
+              <td className="py-[2.4mm] pr-[4mm] whitespace-pre-line">{item.description}</td>
+              <td className="py-[2.4mm] text-right">{item.quantity}</td>
+              <td className="py-[2.4mm] text-right">{item.unitPrice}</td>
+              <td className="py-[2.4mm] text-right">{item.amount}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div className="document-keep-together ml-auto w-64 space-y-3 tabular-nums">
-        <dl className="grid grid-cols-[1fr_auto] gap-y-1">
-          {view.summary.map((row) => (
-            <div key={row.label} className="contents">
-              <dt className="text-doc-ink-muted">{row.label}</dt>
-              <dd className="text-right">{row.amount}</dd>
-            </div>
-          ))}
-          <dt className="border-doc-rule mt-1 border-t pt-2 font-semibold">{view.total.label}</dt>
-          <dd className="border-doc-rule mt-1 border-t pt-2 text-right font-semibold">
-            {view.total.amount}
-          </dd>
-        </dl>
-        {view.taxBreakdown && (
-          <dl className="text-doc-ink-muted grid grid-cols-[1fr_auto] gap-y-0.5 text-[8.5pt]">
-            <dt className="col-span-2">{view.taxBreakdown.note}</dt>
-            {view.taxBreakdown.lines.map((row) => (
-              <div key={row.label} className="contents">
-                <dt>{row.label}</dt>
-                <dd className="text-right">{row.amount}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-      </div>
+      <Totals view={view} sample={sample} />
+      {view.payment && <PaymentSection payment={view.payment} />}
+      <Notes view={view} />
 
-      {view.paymentDetails && (
-        <section className="document-keep-together space-y-1">
-          <Eyebrow>{view.paymentDetails.title}</Eyebrow>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-0.5">
-            {view.paymentDetails.fields.map((field) => (
-              <div key={field.label} className="contents">
-                <dt className="text-doc-ink-muted">{field.label}</dt>
-                <dd className="tabular-nums">{field.value}</dd>
-              </div>
-            ))}
-          </dl>
-          {view.paymentDetails.instructions && (
-            <p className="whitespace-pre-line">{view.paymentDetails.instructions}</p>
-          )}
-        </section>
-      )}
-
-      {(view.notes || view.terms) && (
-        <footer className="document-keep-together grid grid-cols-2 gap-8">
-          {view.notes && (
-            <div>
-              <Eyebrow>{labels.notes}</Eyebrow>
-              <p className="whitespace-pre-line">{view.notes}</p>
-            </div>
-          )}
-          {view.terms && (
-            <div>
-              <Eyebrow>{labels.terms}</Eyebrow>
-              <p className="whitespace-pre-line">{view.terms}</p>
-            </div>
-          )}
-        </footer>
-      )}
+      <div className="min-h-[6mm] flex-1" />
+      <footer className="document-keep-with-previous border-doc-rule text-doc-ink-muted flex justify-between gap-[6mm] border-t pt-[3.5mm] text-[7.5pt]">
+        <div className="flex flex-wrap gap-x-[4mm]">
+          <Line view={view} field="business.name" value={view.business.name} />
+          <Line view={view} field="business.email" value={view.business.email} />
+          <Line view={view} field="business.phone" value={view.business.phone} />
+        </div>
+        <p className="shrink-0 tabular-nums">
+          {view.title} {view.number}
+        </p>
+      </footer>
     </div>
   );
 }

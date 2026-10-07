@@ -134,11 +134,13 @@ Requirements:
 Templates are a core part of the product. Eventual set:
 
 1. Minimal
-2. Modern
+2. Playful
 3. Professional
-4. Editorial
-5. Bold
+4. Traditional
+5. Editorial
 6. Elegant
+
+(Revised 2026-10-07: Modern and Bold were dropped. "Bold" is a visual technique any template may use, not a template.)
 
 Not all six are built initially. First, establish an architecture where multiple templates consume the same document data without duplicating the invoice implementation.
 
@@ -174,7 +176,11 @@ These are recorded in detail in `PRODUCT_DECISIONS.md`.
 - **Money:** stored as integer minor units (kobo, cents). Deterministic rounding; tax is rounded once to the currency's minor unit.
 - **PDF:** the HTML/CSS preview is the PDF. "Download PDF" uses browser print / Save as PDF for now. No separate PDF renderer. Preview and PDF must match.
 - **Guest persistence:** the draft autosaves to the browser and restores on refresh, and can be reset. No authentication. No payment credentials are stored.
-- **Dark mode:** applies to the app UI only. The invoice is always a white paper document.
+- **Dark mode:** applies to the app UI only. It never changes the invoice.
+- **Template visual freedom (revised 2026-10-07):** each template owns its paper (white, tinted, coloured or dark), may use edge-to-edge colour when that's part of its identity, and may include built-in decorative artwork. Users customise only the logo, brand colour, business information and invoice data. There is no visual editor. Rendering is optimised for screen and PDF; there is no separate print-friendly theme yet.
+- **Brand colour is optional (2026-10-07):** with no colour chosen, each template uses its own designed default. A chosen colour is applied however the template sees fit, never automatically as the whole page.
+- **Document fonts:** Bricolage Grotesque (all templates) and Newsreader (Editorial, Elegant). Geist stays the app UI font.
+- **Reference designs inspire the visual language but never dictate the data model.** No signature or subject fields for now; a template may reserve a signature area only if it collapses when there's no signature data.
 - **Testing:** Vitest for business logic.
 - **Currencies:** NGN (default), USD, GBP, EUR, defined as configuration.
 - **Tax:** invoice-level, user enables it and sets the rate. Nigeria suggests VAT 7.5%, which is a suggestion, not tax advice. Prices can be tax-exclusive or tax-inclusive.

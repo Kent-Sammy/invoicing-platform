@@ -49,11 +49,16 @@ export function createSampleDocument({
     items,
     discount: { type: "percentage", value: 10 },
     tax: { enabled: true, label: "VAT", rate: 7.5, mode: taxMode },
-    paymentDetails: {
-      bankName: "GTBank",
-      accountName: "Studio Adebayo Ltd",
-      accountNumber: "0123456789",
-      instructions: "Please use the invoice number as the payment reference.",
+    paymentOptions: {
+      bankTransfer: {
+        enabled: true,
+        bankName: "GTBank",
+        accountName: "Studio Adebayo Ltd",
+        accountNumber: "0123456789",
+        instructions: "Please use the invoice number as the payment reference.",
+      },
+      paymentLink: { enabled: true, url: "https://paystack.com/pay/studio-adebayo", showButton: true },
+      qrCode: { enabled: true },
     },
     notes: "Thank you for your business.",
     terms: "Payment due within 14 days.",

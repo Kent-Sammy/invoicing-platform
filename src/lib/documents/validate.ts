@@ -15,7 +15,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  */
 export function isBusinessDocument(value: unknown): value is BusinessDocument {
   if (!isRecord(value)) return false;
-  const { business, tax, paymentTerms, paymentDetails, branding, items } = value;
+  const { business, tax, paymentTerms, paymentOptions, branding, items } = value;
   return (
     typeof value.id === "string" &&
     typeof value.type === "string" &&
@@ -32,7 +32,11 @@ export function isBusinessDocument(value: unknown): value is BusinessDocument {
     isRecord(value.client) &&
     isRecord(tax) &&
     (tax.mode === "exclusive" || tax.mode === "inclusive") &&
-    isRecord(paymentDetails) &&
+    isRecord(paymentOptions) &&
+    isRecord(paymentOptions.bankTransfer) &&
+    isRecord(paymentOptions.paymentLink) &&
+    typeof paymentOptions.paymentLink.url === "string" &&
+    isRecord(paymentOptions.qrCode) &&
     isRecord(branding) &&
     (branding.logo === null || (isRecord(branding.logo) && typeof branding.logo.assetId === "string")) &&
     Array.isArray(items) &&

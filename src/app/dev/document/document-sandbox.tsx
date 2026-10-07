@@ -4,7 +4,7 @@ import { ImageUp, Moon, Percent, Printer, Rows3 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useState, type ChangeEvent } from "react";
 
-import { useAssetSrc } from "@/components/document/use-asset-src";
+import { useAsset } from "@/components/document/use-asset";
 import { DocumentRenderer } from "@/components/preview/document-renderer";
 import { Button } from "@/components/ui/button";
 import { LOGO_LIMITS } from "@/config/assets";
@@ -22,7 +22,7 @@ export function DocumentSandbox() {
   const [dark, setDark] = useState(false);
   const [logo, setLogo] = useState<AssetRef | null>(null);
   const [logoStatus, setLogoStatus] = useState("");
-  const logoSrc = useAssetSrc(logo, guestStorage.assets);
+  const asset = useAsset(logo, guestStorage.assets);
 
   const sample = createSampleDocument({
     repeat: long ? 12 : 1,
@@ -79,7 +79,10 @@ export function DocumentSandbox() {
         </div>
         <div className="overflow-x-auto p-8 print:overflow-visible print:p-0">
           <div className="mx-auto w-fit ring-1 ring-black/5 print:w-auto print:ring-0">
-            <DocumentRenderer document={document} logoSrc={logoSrc} />
+            <DocumentRenderer
+              document={document}
+              logo={asset && { src: asset.dataUrl, width: asset.width, height: asset.height }}
+            />
           </div>
         </div>
       </div>

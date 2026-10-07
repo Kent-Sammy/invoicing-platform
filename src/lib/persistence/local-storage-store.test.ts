@@ -39,13 +39,26 @@ describe("localStorage document store", () => {
     expect(await storeWith({ [KEY]: "{not json" }).load()).toBeNull();
   });
 
-  it("ignores drafts from another schema version", async () => {
+  it("ignores drafts from versions it can't migrate", async () => {
     const stored = JSON.stringify({ version: 1, document: createSampleDocument() });
     expect(await storeWith({ [KEY]: stored }).load()).toBeNull();
   });
 
   it("ignores drafts that are not valid documents", async () => {
-    const stored = JSON.stringify({ version: 2, document: { id: "x", items: "nope" } });
+    const stored = JSON.stringify({ version: 3, document: { id: "x", items: "nope" } });
     expect(await storeWith({ [KEY]: stored }).load()).toBeNull();
+  });
+
+  it("upgrades v2 drafts, moving bank details into payment options", async () => {
+    const { paymentOptions, ...rest } = createSampleDocument();
+    const { bankName, accountName, accountNumber, instructions } = paymentOptions.bankTransfer;
+    const bank = { bankName, accountName, accountNumber, instructions };
+    const stored = JSON.stringify({ version: 2, document: { ...rest, paymentDetails: bank } });
+
+    const loaded = await storeWith({ [KEY]: stored }).load();
+
+    expect(loaded?.paymentOptions.bankTransfer).toEqual({ enabled: true, ...bank });
+    expect(loaded?.paymentOptions.paymentLink.enabled).toBe(false);
+    expect(loaded).not.toHaveProperty("paymentDetails");
   });
 });

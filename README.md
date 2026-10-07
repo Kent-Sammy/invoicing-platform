@@ -33,3 +33,5 @@ Open http://localhost:3000.
 - [docs/PRD.md](docs/PRD.md) — product requirements
 - [docs/PRODUCT_DECISIONS.md](docs/PRODUCT_DECISIONS.md) — architecture and product decision log
 - [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) — visual system
+- [docs/TEMPLATE_ARCHITECTURE.md](docs/TEMPLATE_ARCHITECTURE.md) — how invoice templates are structured (proposed)
+- [docs/TEMPLATE_DIRECTIONS.md](docs/TEMPLATE_DIRECTIONS.md) — design direction for the six templates (exploration)

@@ -4,19 +4,23 @@ export {
   createId,
   createItem,
   createParty,
-  createPaymentDetails,
+  createPaymentOptions,
   createTax,
   DEFAULT_BRAND_COLOR,
   DEFAULT_TEMPLATE_ID,
 } from "./create";
 export { DOCUMENT_TYPES, getDocumentType, type DocumentTypeDefinition } from "./definitions";
+export { logoSize } from "./logo-size";
 export { dueDateFor } from "./payment-terms";
+export { withPlaceholders, type PlaceholderField } from "./placeholders";
 export { documentReducer, type DocumentAction } from "./reducer";
 export { isBusinessDocument } from "./validate";
 export {
   createDocumentView,
+  type DocumentLogo,
   type DocumentView,
   type DocumentViewAmount,
   type DocumentViewField,
   type DocumentViewItem,
+  type DocumentViewPayment,
 } from "./view";

@@ -1,19 +1,22 @@
 import { getCountry } from "@/config/countries";
 import type {
+  BankTransferOption,
   Business,
   BusinessDocument,
   DocumentBranding,
   DocumentItem,
   DocumentTax,
   Party,
-  PaymentDetails,
+  PaymentLinkOption,
+  PaymentOptions,
+  QrCodeOption,
 } from "@/types/document";
 
 import { dueDateFor } from "./payment-terms";
 
 type DocumentFields = Omit<
   BusinessDocument,
-  "id" | "type" | "business" | "client" | "items" | "tax" | "paymentDetails" | "branding"
+  "id" | "type" | "business" | "client" | "items" | "tax" | "paymentOptions" | "branding"
 >;
 
 export type DocumentAction =
@@ -22,7 +25,9 @@ export type DocumentAction =
   | { type: "updateBusiness"; changes: Partial<Business> }
   | { type: "updateClient"; changes: Partial<Party> }
   | { type: "updateTax"; changes: Partial<DocumentTax> }
-  | { type: "updatePaymentDetails"; changes: Partial<PaymentDetails> }
+  | { type: "updateBankTransfer"; changes: Partial<BankTransferOption> }
+  | { type: "updatePaymentLink"; changes: Partial<PaymentLinkOption> }
+  | { type: "updateQrCode"; changes: Partial<QrCodeOption> }
   | { type: "updateBranding"; changes: Partial<DocumentBranding> }
   | { type: "addItem"; item: DocumentItem }
   | { type: "updateItem"; id: string; changes: Partial<Omit<DocumentItem, "id">> }
@@ -56,6 +61,13 @@ function updateBusiness(business: Business, changes: Partial<Business>): Busines
   return next;
 }
 
+function withPaymentOptions(
+  document: BusinessDocument,
+  changes: Partial<PaymentOptions>,
+): BusinessDocument {
+  return { ...document, paymentOptions: { ...document.paymentOptions, ...changes } };
+}
+
 /** Pure state transitions for the document being edited. */
 export function documentReducer(
   document: BusinessDocument,
@@ -72,11 +84,18 @@ export function documentReducer(
       return { ...document, client: { ...document.client, ...action.changes } };
     case "updateTax":
       return { ...document, tax: { ...document.tax, ...action.changes } };
-    case "updatePaymentDetails":
-      return {
-        ...document,
-        paymentDetails: { ...document.paymentDetails, ...action.changes },
-      };
+    case "updateBankTransfer":
+      return withPaymentOptions(document, {
+        bankTransfer: { ...document.paymentOptions.bankTransfer, ...action.changes },
+      });
+    case "updatePaymentLink":
+      return withPaymentOptions(document, {
+        paymentLink: { ...document.paymentOptions.paymentLink, ...action.changes },
+      });
+    case "updateQrCode":
+      return withPaymentOptions(document, {
+        qrCode: { ...document.paymentOptions.qrCode, ...action.changes },
+      });
     case "updateBranding":
       return { ...document, branding: { ...document.branding, ...action.changes } };
     case "addItem":

@@ -13,6 +13,7 @@
   --doc-ink-muted: #71717a;
   --doc-rule: #e4e4e7;
   --doc-brand: #18181b; /* overridden per document from branding */
+  --doc-placeholder: #a1a1aa;
 
   /* Must match the @page margin below so preview and print line up. */
   --doc-margin: 18mm;
@@ -34,9 +35,33 @@
   break-inside: avoid;
 }
 
+/* Never strand a block (e.g. the footer) alone at the top of a page. */
+.document-keep-with-previous {
+  break-before: avoid;
+}
+
 /* Force a block onto a new page. */
 .document-page-break {
   break-before: page;
+}
+
+/*
+ * Sample content shown in the live preview until the user fills a field.
+ * Visibly marked on screen, never printed.
+ */
+.document-page [data-placeholder] {
+  color: var(--doc-placeholder);
+}
+
+.document-page p[data-placeholder],
+.document-page tr[data-placeholder] td {
+  text-decoration: underline dotted var(--doc-rule);
+  text-underline-offset: 0.25em;
+}
+
+/* Scales the A4 sheet to fit the preview pane on screen; disabled in print. */
+.document-scaler {
+  transform-origin: top left;
 }
 
 @page {
@@ -58,6 +83,16 @@
     box-shadow: none;
     border: 0;
     border-radius: 0;
+  }
+
+  .document-page [data-placeholder] {
+    display: none !important;
+  }
+
+  .document-scaler {
+    transform: none !important;
+    width: auto !important;
+    height: auto !important;
   }
 
   /* Table headers repeat on every printed page; rows never split. */

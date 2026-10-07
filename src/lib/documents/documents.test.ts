@@ -39,8 +39,9 @@ describe("createDocument", () => {
     expect(uk.tax).toMatchObject({ label: "Tax", rate: 0 });
   });
 
-  it("starts with empty payment details and no logo", () => {
-    expect(Object.values(document.paymentDetails).every((value) => value === "")).toBe(true);
+  it("starts with no payment options and no logo", () => {
+    const { bankTransfer, paymentLink, qrCode } = document.paymentOptions;
+    expect([bankTransfer.enabled, paymentLink.enabled, qrCode.enabled]).toEqual([false, false, false]);
     expect(document.branding.logo).toBeNull();
   });
 });
@@ -95,6 +96,13 @@ describe("documentReducer date rules", () => {
   });
 });
 
+function withOptions(
+  document: BusinessDocument,
+  changes: Partial<BusinessDocument["paymentOptions"]>,
+): BusinessDocument {
+  return { ...document, paymentOptions: { ...document.paymentOptions, ...changes } };
+}
+
 describe("createDocumentView", () => {
   it("formats amounts, dates and labels for templates", () => {
     const view = createDocumentView(createSampleDocument());
@@ -138,15 +146,16 @@ describe("createDocumentView", () => {
     expect(view.total.amount).toBe("₦1,670,145.42");
   });
 
-  it("includes only the payment details that were filled in", () => {
+  it("includes only the bank details that were filled in", () => {
     const sample = createSampleDocument();
-    const view = createDocumentView({
-      ...sample,
-      paymentDetails: { ...sample.paymentDetails, accountName: "", instructions: "" },
-    });
+    const view = createDocumentView(
+      withOptions(sample, {
+        bankTransfer: { ...sample.paymentOptions.bankTransfer, accountName: "", instructions: "" },
+      }),
+    );
 
-    expect(view.paymentDetails).toEqual({
-      title: "Payment details",
+    expect(view.payment?.bankTransfer).toEqual({
+      title: "Bank transfer",
       fields: [
         { label: "Bank", value: "GTBank" },
         { label: "Account number", value: "0123456789" },
@@ -155,16 +164,56 @@ describe("createDocumentView", () => {
     });
   });
 
-  it("omits payment details when empty", () => {
-    const view = createDocumentView({
-      ...createSampleDocument(),
-      paymentDetails: { bankName: "", accountName: "", accountNumber: "", instructions: " " },
+  it("builds a Pay invoice link and a QR code from the payment URL", () => {
+    const view = createDocumentView(createSampleDocument());
+
+    expect(view.payment?.link).toEqual({
+      url: "https://paystack.com/pay/studio-adebayo",
+      label: "Pay invoice",
+      display: "paystack.com/pay/studio-adebayo",
     });
-    expect(view.paymentDetails).toBeNull();
+    expect(view.payment?.qr?.caption).toBe("Scan to pay");
+    expect(view.payment?.qr?.code.size).toBeGreaterThan(20);
+  });
+
+  it("respects the button / QR / both choice", () => {
+    const sample = createSampleDocument();
+    const qrOnly = createDocumentView(
+      withOptions(sample, { paymentLink: { ...sample.paymentOptions.paymentLink, showButton: false } }),
+    );
+    const buttonOnly = createDocumentView(withOptions(sample, { qrCode: { enabled: false } }));
+
+    expect(qrOnly.payment?.link).toBeNull();
+    expect(qrOnly.payment?.qr).not.toBeNull();
+    expect(buttonOnly.payment?.link).not.toBeNull();
+    expect(buttonOnly.payment?.qr).toBeNull();
+  });
+
+  it("never renders an unsafe or invalid payment URL", () => {
+    const sample = createSampleDocument();
+    for (const url of ["javascript:alert(1)", "not a link", ""]) {
+      const view = createDocumentView(
+        withOptions(sample, { paymentLink: { ...sample.paymentOptions.paymentLink, url } }),
+      );
+      expect(view.payment?.link).toBeNull();
+      expect(view.payment?.qr).toBeNull();
+    }
+  });
+
+  it("omits payment entirely when no option is enabled and filled", () => {
+    const sample = createSampleDocument();
+    const view = createDocumentView(
+      withOptions(sample, {
+        bankTransfer: { ...sample.paymentOptions.bankTransfer, enabled: false },
+        paymentLink: { ...sample.paymentOptions.paymentLink, enabled: false },
+      }),
+    );
+    expect(view.payment).toBeNull();
   });
 
   it("passes through the resolved logo", () => {
-    const view = createDocumentView(createSampleDocument(), { logoSrc: "data:image/webp;base64,AA" });
-    expect(view.branding.logoSrc).toBe("data:image/webp;base64,AA");
+    const logo = { src: "data:image/webp;base64,AA", width: 1200, height: 300 };
+    const view = createDocumentView(createSampleDocument(), { logo });
+    expect(view.branding.logo).toEqual(logo);
   });
 });

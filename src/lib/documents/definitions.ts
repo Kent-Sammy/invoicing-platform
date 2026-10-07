@@ -19,9 +19,14 @@ export interface DocumentTypeDefinition {
     discount: string;
     net: string;
     total: string;
+    amountDue: string;
     /** Follows the tax label, e.g. "VAT (7.5%) included". */
     taxIncluded: string;
-    paymentDetails: string;
+    payment: string;
+    bankTransfer: string;
+    payOnline: string;
+    payInvoice: string;
+    scanToPay: string;
     bankName: string;
     accountName: string;
     accountNumber: string;
@@ -49,8 +54,13 @@ export const DOCUMENT_TYPES: Record<DocumentType, DocumentTypeDefinition> = {
       discount: "Discount",
       net: "Net",
       total: "Total",
+      amountDue: "Amount due",
       taxIncluded: "included",
-      paymentDetails: "Payment details",
+      payment: "Payment",
+      bankTransfer: "Bank transfer",
+      payOnline: "Pay online",
+      payInvoice: "Pay invoice",
+      scanToPay: "Scan to pay",
       bankName: "Bank",
       accountName: "Account name",
       accountNumber: "Account number",
