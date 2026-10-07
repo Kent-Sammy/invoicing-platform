@@ -1,0 +1,71 @@
+/*
+ * The printable document. The preview IS the PDF: what renders inside
+ * .document-page on screen is exactly what browser print / Save as PDF outputs.
+ *
+ * The document is always a white paper sheet. It defines its own colour tokens
+ * and never uses the app theme tokens, so dark mode cannot affect it.
+ */
+
+.document-page {
+  /* Paper tokens — exposed to Tailwind as bg-doc-paper, text-doc-ink, etc. */
+  --doc-paper: #ffffff;
+  --doc-ink: #18181b;
+  --doc-ink-muted: #71717a;
+  --doc-rule: #e4e4e7;
+  --doc-brand: #18181b; /* overridden per document from branding */
+
+  /* Must match the @page margin below so preview and print line up. */
+  --doc-margin: 18mm;
+
+  color-scheme: light;
+  box-sizing: border-box;
+  width: 210mm;
+  min-height: 297mm;
+  padding: var(--doc-margin);
+  background: var(--doc-paper);
+  color: var(--doc-ink);
+  font-family: var(--font-geist-sans), sans-serif;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Keep a block on one page (totals, notes, signatures). */
+.document-keep-together {
+  break-inside: avoid;
+}
+
+/* Force a block onto a new page. */
+.document-page-break {
+  break-before: page;
+}
+
+@page {
+  size: A4;
+  margin: 18mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  /* Page margins come from @page when printing, so the sheet drops its own. */
+  .document-page {
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    box-shadow: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  /* Table headers repeat on every printed page; rows never split. */
+  .document-page thead {
+    display: table-header-group;
+  }
+
+  .document-page tr {
+    break-inside: avoid;
+  }
+}

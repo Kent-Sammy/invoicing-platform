@@ -21,6 +21,12 @@ Open http://localhost:3000.
 | `npm run build` | Production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Generate route types and run `tsc --noEmit` |
+| `npm test` | Unit tests (Vitest) |
+| `npm run test:watch` | Unit tests in watch mode |
+
+## Development sandbox
+
+`/dev/document` renders a sample invoice through the real renderer. Use it to check templates, multi-page print (`?long`) and the paper-stays-white rule in dark mode. It returns 404 in production.
 
 ## Documentation
 

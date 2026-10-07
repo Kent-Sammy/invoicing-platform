@@ -1,10 +1,19 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./document.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Document (paper) tokens — defined on .document-page, never themed. */
+  --color-doc-paper: var(--doc-paper);
+  --color-doc-ink: var(--doc-ink);
+  --color-doc-ink-muted: var(--doc-ink-muted);
+  --color-doc-rule: var(--doc-rule);
+  --color-doc-brand: var(--doc-brand);
+
+  /* App (UI chrome) tokens — themed for light and dark. */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -49,8 +58,6 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -81,6 +88,8 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
 }
 
 .dark {
