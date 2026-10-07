@@ -38,6 +38,7 @@ export function isBusinessDocument(value: unknown): value is BusinessDocument {
     typeof paymentOptions.paymentLink.url === "string" &&
     isRecord(paymentOptions.qrCode) &&
     isRecord(branding) &&
+    (branding.brandColor === null || typeof branding.brandColor === "string") &&
     (branding.logo === null || (isRecord(branding.logo) && typeof branding.logo.assetId === "string")) &&
     Array.isArray(items) &&
     items.every(

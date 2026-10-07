@@ -64,7 +64,7 @@ export interface DocumentView {
   payment: DocumentViewPayment | null;
   notes: string;
   terms: string;
-  branding: { brandColor: string; logo: DocumentLogo | null };
+  branding: { brandColor: string | null; logo: DocumentLogo | null };
   /** Fields showing sample content; templates mark them, print omits them. */
   placeholders: ReadonlySet<PlaceholderField>;
 }

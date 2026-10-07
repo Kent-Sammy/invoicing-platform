@@ -1,5 +1,10 @@
 import { getTemplate } from "@/components/templates/registry";
-import { createDocumentView, withPlaceholders, type DocumentLogo } from "@/lib/documents";
+import {
+  createDocumentTheme,
+  createDocumentView,
+  withPlaceholders,
+  type DocumentLogo,
+} from "@/lib/documents";
 import type { BusinessDocument } from "@/types/document";
 
 import { DocumentPage } from "./document-page";
@@ -16,8 +21,8 @@ interface DocumentRendererProps {
 }
 
 /**
- * document → view model → template → A4 page. The live preview and the
- * printed PDF both come from this one component. Content flows across as
+ * document → view model + theme → template → A4 page. The live preview and
+ * the printed PDF both come from this one component. Content flows across as
  * many printed pages as it needs; page breaks are handled by print CSS.
  */
 export function DocumentRenderer({
@@ -31,10 +36,15 @@ export function DocumentRenderer({
     placeholders: filled?.placeholders,
   });
   const template = getTemplate(document.branding.templateId);
+  const theme = createDocumentTheme(
+    template.surface,
+    template.defaultAccent,
+    view.branding.brandColor,
+  );
 
   return (
-    <DocumentPage brandColor={view.branding.brandColor}>
-      <template.component view={view} />
+    <DocumentPage surface={template.surface} theme={theme} font={template.fonts[0]}>
+      <template.component view={view} theme={theme} />
     </DocumentPage>
   );
 }

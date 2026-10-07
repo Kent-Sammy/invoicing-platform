@@ -19,7 +19,6 @@ import { getDocumentType } from "./definitions";
 import { dueDateFor } from "./payment-terms";
 
 export const DEFAULT_TEMPLATE_ID: TemplateId = "minimal";
-export const DEFAULT_BRAND_COLOR = "#171717";
 
 export function createId(): string {
   return crypto.randomUUID();
@@ -92,7 +91,7 @@ export function createDocument(
     terms: "",
     branding: {
       templateId: DEFAULT_TEMPLATE_ID,
-      brandColor: DEFAULT_BRAND_COLOR,
+      brandColor: null,
       logo: null,
     },
   };

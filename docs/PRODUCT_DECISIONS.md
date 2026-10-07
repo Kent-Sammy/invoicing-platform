@@ -297,6 +297,23 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
   - Both families were verified to contain ₦ $ £ €. ₦ (U+20A6) is only in the `latin-ext` subset, so both must be loaded with `subsets: ["latin", "latin-ext"]` or naira amounts silently fall back to another font.
   - Bricolage Grotesque is loaded with its optical-size axis, so body text uses its calmer small-size design.
 
+## 026 — Minimal stays on Geist; Playful is built first; groundwork done
+
+**Status:** Decided by product owner · 2026-10-07
+
+- **Minimal** is the approved baseline and stays on Geist, visually unchanged, until a font migration is explicitly reviewed. A markup snapshot test (`minimal-baseline.test.tsx`) guards this. Its pay button also keeps its current colours; the contrast-safe `onBrand` colour applies to new templates now and to Minimal only with that migration.
+- **Build order:** Minimal (baseline), **Playful**, Professional, Traditional, Editorial, Elegant. Playful goes first as the most expressive design test.
+- **Groundwork delivered:**
+  - templates own `surface`, `defaultAccent` and `fonts`;
+  - `DocumentTheme` with WCAG-based `onBrand` / `brandText` / `brandSubtle`;
+  - nullable brand colour with draft schema v4;
+  - Bricolage Grotesque and Newsreader loaded on demand with `latin-ext`, and printing waits for fonts;
+  - full-bleed print frame (`@page { margin: 0 }` with cloned 18mm padding) plus an every-page artwork layer;
+  - the shared kit (`SampleText`, `isSampleParty`, `LogoMark`, `PayLink`, `PaymentQr`);
+  - the template contract test, with a mutation check confirming it fails when content is dropped;
+  - sandbox template and brand toggles, and the `/dev/frame` check page.
+- **Not verified:** Safari and Firefox printing of the full-bleed frame. Firefox isn't installed and Safari can't print headlessly here. Chrome 155 is verified.
+
 ---
 
 ## Open decisions

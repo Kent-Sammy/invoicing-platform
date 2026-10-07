@@ -12,6 +12,13 @@
   --color-doc-ink-muted: var(--doc-ink-muted);
   --color-doc-rule: var(--doc-rule);
   --color-doc-brand: var(--doc-brand);
+  --color-doc-on-brand: var(--doc-on-brand);
+  --color-doc-brand-text: var(--doc-brand-text);
+  --color-doc-brand-subtle: var(--doc-brand-subtle);
+  --color-doc-placeholder: var(--doc-placeholder);
+  /* Document font families (decision 025): font-doc-sans, font-doc-serif. */
+  --font-doc-sans: var(--font-bricolage), sans-serif;
+  --font-doc-serif: var(--font-newsreader), serif;
 
   /* App (UI chrome) tokens — themed for light and dark. */
   --color-canvas: var(--canvas);

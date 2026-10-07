@@ -1,6 +1,6 @@
 # Template Architecture
 
-Status: **Proposed**, updated 2026-10-07 for decision 024 (template lineup, template-owned paper, full-bleed, artwork). Template-by-template directions are in `TEMPLATE_DIRECTIONS.md`.
+Status: **Accepted**; groundwork implemented (decision 026). Updated 2026-10-07 for decision 024 (template lineup, template-owned paper, full-bleed, artwork). Template-by-template directions are in `TEMPLATE_DIRECTIONS.md`.
 Scope: defines how templates are structured, what may vary between them, and what must stay identical. No templates are created by this document.
 
 ---

@@ -107,8 +107,11 @@ export interface PaymentOptions {
 
 export interface DocumentBranding {
   templateId: TemplateId;
-  /** Hex colour, e.g. "#171717". */
-  brandColor: string;
+  /**
+   * Hex colour, e.g. "#4f46e5", or null when the user hasn't chosen one —
+   * each template then uses its own designed default accent (decision 025).
+   */
+  brandColor: string | null;
   /** Reference to a stored logo asset — never the image data itself. */
   logo: AssetRef | null;
 }

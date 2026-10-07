@@ -1,5 +1,5 @@
 /** Current shape of stored drafts. Bump when BusinessDocument changes incompatibly. */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 type Draft = Record<string, unknown>;
 
@@ -31,7 +31,20 @@ function v2ToV3(document: Draft): Draft {
   };
 }
 
-const MIGRATIONS: Record<number, (document: Draft) => Draft> = { 2: v2ToV3 };
+/**
+ * v3 → v4: brand colour became optional. The old default "#171717" meant
+ * "nothing chosen" (no colour picker has shipped), so it becomes null.
+ */
+function v3ToV4(document: Draft): Draft {
+  const branding = isRecord(document.branding) ? document.branding : {};
+  const brandColor =
+    typeof branding.brandColor === "string" && branding.brandColor.toLowerCase() !== "#171717"
+      ? branding.brandColor
+      : null;
+  return { ...document, branding: { ...branding, brandColor } };
+}
+
+const MIGRATIONS: Record<number, (document: Draft) => Draft> = { 2: v2ToV3, 3: v3ToV4 };
 
 /**
  * Upgrades a stored document to the current schema, one version at a time.

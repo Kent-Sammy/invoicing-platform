@@ -45,8 +45,17 @@ describe("localStorage document store", () => {
   });
 
   it("ignores drafts that are not valid documents", async () => {
-    const stored = JSON.stringify({ version: 3, document: { id: "x", items: "nope" } });
+    const stored = JSON.stringify({ version: 4, document: { id: "x", items: "nope" } });
     expect(await storeWith({ [KEY]: stored }).load()).toBeNull();
+  });
+
+  it("upgrades v3 drafts: the old near-black default becomes 'no colour chosen'", async () => {
+    const sample = createSampleDocument();
+    const old = (brandColor: string) =>
+      JSON.stringify({ version: 3, document: { ...sample, branding: { ...sample.branding, brandColor } } });
+
+    expect((await storeWith({ [KEY]: old("#171717") }).load())?.branding.brandColor).toBeNull();
+    expect((await storeWith({ [KEY]: old("#4f46e5") }).load())?.branding.brandColor).toBe("#4f46e5");
   });
 
   it("upgrades v2 drafts, moving bank details into payment options", async () => {

@@ -1,12 +1,8 @@
 import type { ReactNode } from "react";
 
-import {
-  logoSize,
-  type DocumentView,
-  type DocumentViewPayment,
-  type PlaceholderField,
-} from "@/lib/documents";
+import type { DocumentView, DocumentViewPayment } from "@/lib/documents";
 
+import { isSampleParty, LogoMark, PayLink, PaymentQr, SampleText as Line } from "../kit";
 import type { TemplateProps } from "../types";
 
 // Minimal: a quiet, typographic invoice. Sizes are in pt/mm so the screen
@@ -20,32 +16,11 @@ function Eyebrow({ children }: { children: ReactNode }) {
   );
 }
 
-/** A line of text that may be sample content (marked on screen, omitted in print). */
-function Line({
-  view,
-  field,
-  value,
-  className,
-}: {
-  view: DocumentView;
-  field: PlaceholderField;
-  value: string;
-  className?: string;
-}) {
-  if (!value) return null;
-  return (
-    <p className={className} data-placeholder={view.placeholders.has(field) || undefined}>
-      {value}
-    </p>
-  );
-}
-
 function PartyBlock({ view, party }: { view: DocumentView; party: "business" | "client" }) {
   const data = view[party];
-  // An entirely sample block (label included) disappears from print.
-  const allSample = view.placeholders.has(`${party}.name`) && !data.taxId && (party === "business" || !data.phone);
   return (
-    <div data-placeholder={(allSample && view.placeholders.has(`${party}.email`)) || undefined}>
+    // An entirely sample block (label included) disappears from print.
+    <div data-placeholder={isSampleParty(view, party) || undefined}>
       <Eyebrow>{party === "business" ? view.labels.from : view.labels.to}</Eyebrow>
       <Line view={view} field={`${party}.name`} value={data.name} className="text-[10pt] font-semibold" />
       <div className="text-doc-ink-muted mt-[0.8mm]">
@@ -61,18 +36,11 @@ function PartyBlock({ view, party }: { view: DocumentView; party: "business" | "
 
 function Header({ view }: { view: DocumentView }) {
   const { logo } = view.branding;
-  const size = logo && logoSize(logo.width, logo.height);
   return (
     <header className="flex items-start justify-between gap-[10mm]">
       <div className="min-w-0 pt-[1mm]">
-        {logo && size ? (
-          // eslint-disable-next-line @next/next/no-img-element -- locally stored data URL
-          <img
-            src={logo.src}
-            alt=""
-            className="object-contain object-left"
-            style={{ width: `${size.width}mm`, height: `${size.height}mm` }}
-          />
+        {logo ? (
+          <LogoMark logo={logo} />
         ) : (
           <Line
             view={view}
@@ -124,22 +92,6 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
   );
 }
 
-function QrCodeImage({ qr }: { qr: NonNullable<DocumentViewPayment["qr"]> }) {
-  const { size, path } = qr.code;
-  return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      className="size-[22mm] shrink-0"
-      shapeRendering="crispEdges"
-      role="img"
-      aria-label={`${qr.caption}: ${qr.display}`}
-    >
-      <rect width={size} height={size} fill="#ffffff" />
-      <path d={path} fill="#000000" />
-    </svg>
-  );
-}
-
 function PaymentSection({ payment }: { payment: DocumentViewPayment }) {
   const { bankTransfer, link, qr } = payment;
   const online = link || qr;
@@ -165,19 +117,16 @@ function PaymentSection({ payment }: { payment: DocumentViewPayment }) {
         )}
         {online && (
           <div className="flex items-start gap-[5mm]">
-            {qr && <QrCodeImage qr={qr} />}
+            {qr && <PaymentQr qr={qr} />}
             <div className="min-w-0">
               {link ? (
                 <>
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <PayLink
+                    link={link}
                     className="bg-doc-brand text-doc-paper inline-flex items-center gap-[1.5mm] rounded-[1.2mm] px-[4.5mm] py-[2.2mm] font-semibold no-underline"
                   >
-                    {link.label}
                     <span aria-hidden>→</span>
-                  </a>
+                  </PayLink>
                   <p className="text-doc-ink-muted mt-[2mm] text-[8pt] [overflow-wrap:anywhere]">{link.display}</p>
                 </>
               ) : (
@@ -219,9 +168,8 @@ export function MinimalTemplate({ view }: TemplateProps) {
   const sample = view.placeholders.has("items") || undefined;
 
   return (
-    // 260mm = A4 height minus both 18mm margins, minus 1mm so print rounding
-    // never pushes the footer onto an empty second page.
-    <div className="text-doc-ink flex min-h-[260mm] flex-col text-[9.5pt] leading-[1.5]">
+    // Fills page one so the footer sits at its foot (see --doc-content-height).
+    <div className="text-doc-ink flex min-h-(--doc-content-height) flex-col text-[9.5pt] leading-[1.5]">
       <Header view={view} />
 
       <section className="mt-[9mm] grid grid-cols-[1fr_1fr_auto] gap-x-[8mm]">

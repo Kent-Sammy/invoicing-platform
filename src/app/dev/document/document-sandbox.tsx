@@ -1,11 +1,12 @@
 "use client";
 
-import { ImageUp, Moon, Percent, Printer, Rows3 } from "lucide-react";
+import { ImageUp, LayoutTemplate, Moon, Palette, Percent, Printer, Rows3 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useState, type ChangeEvent } from "react";
 
 import { useAsset } from "@/components/document/use-asset";
 import { DocumentRenderer } from "@/components/preview/document-renderer";
+import { TEMPLATES } from "@/components/templates/registry";
 import { Button } from "@/components/ui/button";
 import { LOGO_LIMITS } from "@/config/assets";
 import { createSampleDocument } from "@/data/sample-document";
@@ -13,10 +14,19 @@ import { processLogo } from "@/lib/assets";
 import { guestStorage } from "@/lib/guest";
 import { cn } from "@/lib/utils";
 import type { AssetRef } from "@/types/asset";
+import type { TemplateId } from "@/types/template";
+
+const TEMPLATE_IDS = Object.keys(TEMPLATES) as TemplateId[];
 
 export function DocumentSandbox() {
-  // ?long / ?inclusive open those variants directly (useful for headless print checks).
+  // ?long / ?inclusive / ?template=<id> / ?brand=none open those variants
+  // directly (useful for headless print checks).
   const searchParams = useSearchParams();
+  const [templateId, setTemplateId] = useState<TemplateId>(() => {
+    const requested = searchParams.get("template");
+    return TEMPLATE_IDS.find((id) => id === requested) ?? "minimal";
+  });
+  const [brandChosen, setBrandChosen] = useState(() => searchParams.get("brand") !== "none");
   const [long, setLong] = useState(() => searchParams.has("long"));
   const [inclusive, setInclusive] = useState(() => searchParams.has("inclusive"));
   const [dark, setDark] = useState(false);
@@ -28,7 +38,15 @@ export function DocumentSandbox() {
     repeat: long ? 12 : 1,
     taxMode: inclusive ? "inclusive" : "exclusive",
   });
-  const document = { ...sample, branding: { ...sample.branding, logo } };
+  const document = {
+    ...sample,
+    branding: {
+      ...sample.branding,
+      templateId,
+      brandColor: brandChosen ? sample.branding.brandColor : null,
+      logo,
+    },
+  };
 
   async function handleLogo(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -63,6 +81,18 @@ export function DocumentSandbox() {
                 onChange={handleLogo}
               />
             </label>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setTemplateId(TEMPLATE_IDS[(TEMPLATE_IDS.indexOf(templateId) + 1) % TEMPLATE_IDS.length])
+            }
+          >
+            <LayoutTemplate /> {TEMPLATES[templateId].name}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setBrandChosen(!brandChosen)}>
+            <Palette /> {brandChosen ? "Brand colour" : "No brand colour"}
           </Button>
           <Button variant="outline" size="sm" onClick={() => setInclusive(!inclusive)}>
             <Percent /> {inclusive ? "Tax inclusive" : "Tax exclusive"}

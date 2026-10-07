@@ -2,21 +2,29 @@
  * The printable document. The preview IS the PDF: what renders inside
  * .document-page on screen is exactly what browser print / Save as PDF outputs.
  *
- * The document is always a white paper sheet. It defines its own colour tokens
- * and never uses the app theme tokens, so dark mode cannot affect it.
+ * Paper, inks, theme colours and base font come from the template (set as
+ * inline variables by DocumentPage; decision 024). The values below are only
+ * fallbacks. The document never uses the app theme, so dark mode can't touch it.
  */
 
 .document-page {
-  /* Paper tokens — exposed to Tailwind as bg-doc-paper, text-doc-ink, etc. */
+  /* Exposed to Tailwind as bg-doc-paper, text-doc-ink, bg-doc-brand, … */
   --doc-paper: #ffffff;
   --doc-ink: #18181b;
   --doc-ink-muted: #71717a;
   --doc-rule: #e4e4e7;
-  --doc-brand: #18181b; /* overridden per document from branding */
   --doc-placeholder: #a1a1aa;
+  --doc-brand: #18181b;
+  --doc-on-brand: #ffffff;
+  --doc-brand-text: #18181b;
+  --doc-brand-subtle: #f4f4f5;
+  --doc-font: var(--font-geist-sans), sans-serif;
 
-  /* Must match the @page margin below so preview and print line up. */
+  /* Content margins on every page, on screen and in print. Never per template. */
   --doc-margin: 18mm;
+  /* Usable height of page one (A4 minus both margins, minus 1mm so print
+     rounding never pushes a bottom-anchored footer onto an empty page). */
+  --doc-content-height: calc(297mm - 2 * var(--doc-margin) - 1mm);
 
   color-scheme: light;
   box-sizing: border-box;
@@ -25,7 +33,9 @@
   padding: var(--doc-margin);
   background: var(--doc-paper);
   color: var(--doc-ink);
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--doc-font);
+  /* Anchor for template artwork, which may reach the sheet's edges. */
+  position: relative;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
@@ -64,9 +74,25 @@
   transform-origin: top left;
 }
 
+/*
+ * Template artwork. Page-one artwork is positioned absolutely within the
+ * sheet. Artwork that belongs on every printed page uses this class: it
+ * spans the sheet on screen and repeats on each page in print.
+ */
+.document-every-page-art {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/*
+ * Full-bleed frame (decision 024): printed pages have no margin, so paper
+ * colour and artwork can reach the edge. The 18mm content margins are
+ * recreated inside the sheet on every printed page (box-decoration-break).
+ */
 @page {
   size: A4;
-  margin: 18mm;
+  margin: 0;
 }
 
 @media print {
@@ -75,14 +101,19 @@
     background: #ffffff !important;
   }
 
-  /* Page margins come from @page when printing, so the sheet drops its own. */
+  /* The sheet keeps its 18mm padding, cloned onto every printed page. */
   .document-page {
     width: auto;
     min-height: 0;
-    padding: 0;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
     box-shadow: none;
     border: 0;
     border-radius: 0;
+  }
+
+  .document-every-page-art {
+    position: fixed;
   }
 
   .document-page [data-placeholder] {

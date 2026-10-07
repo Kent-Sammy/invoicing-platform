@@ -56,7 +56,7 @@ Templates are designed around this inventory. Anything not listed doesn't exist 
 
 | Template | Fonts | How |
 | --- | --- | --- |
-| Minimal | Bricolage | Semibold title; regular body at small optical size |
+| Minimal | **Geist (unchanged)** | Stays on its current typography until a migration is reviewed (decision 026) |
 | Professional | Bricolage | Semibold headings; dense regular body |
 | Traditional | Bricolage | Regular and semibold only; tracked uppercase labels; no display extremes |
 | Playful | Bricolage | Extra-bold, wide display; regular body |
@@ -77,7 +77,7 @@ Every template defines a **default accent**, used when no brand colour is chosen
 - **References:** the layout of `elegant-01/02` on white; essentially today's Minimal.
 - **Paper:** white. **Edge colour:** none. **Artwork:** none.
 - **Layout:** as built: wordmark or logo top left, title and number top right; Bill to / From / dates; amount-due band; table; totals; payment; notes; footer.
-- **Type:** Bricolage. **Default accent:** ink (`#171717`).
+- **Type:** Geist, unchanged (decision 026). **Default accent:** ink (`#171717`).
 - **Brand colour:** title and pay button.
 
 ### 4.2 Professional
@@ -167,25 +167,22 @@ Every template defines a **default accent**, used when no brand colour is chosen
 | Paper | White | White / off-white | White | White / tint | Acid lime | Dark |
 | Full-bleed | – | – | – | Motif only | Whole page | Whole page |
 | Artwork | – | – | Rules | Fixed-palette motifs | Typographic | Gradient band |
-| Fonts | Bricolage | Bricolage | Bricolage | Bricolage | Bricolage + Newsreader | Newsreader + Bricolage |
+| Fonts | Geist (baseline) | Bricolage | Bricolage | Bricolage | Bricolage + Newsreader | Newsreader + Bricolage |
 | Default accent (no brand) | Ink | Slate blue | Navy | Violet (palette) | Ink on lime | Cool blue / ember |
 | Chosen brand colour goes to | Title, button | Table header, total | Header rule, title, total rules | Title, total pill | Display words, rules | Artwork, button |
 | New platform needs | – | – | – | Frame | Frame, wordmark fitting | Frame, dark tokens, QR plate |
 
-## 6. Recommended build order
+## 6. Build order (decided, 026)
 
-0. **Groundwork** (`TEMPLATE_ARCHITECTURE.md` §5), now also including:
-   - nullable brand colour with draft schema v4 (`#171717` → `null`);
-   - each template's default accent;
-   - loading both fonts with `latin-ext`;
-   - moving Minimal from Geist to Bricolage, which is the one visible change to Minimal.
-1. **Professional:** high user value, no new platform features; proves the kit.
-2. **Traditional:** kit variants plus rules; no new platform features.
-3. **Elegant:** proves dark paper, full-bleed and generated artwork.
-4. **Editorial:** full-bleed colour field, wordmark fitting, two-font pairing.
-5. **Playful:** the most artwork, built last.
+0. **Groundwork:** done (see decision 026).
+1. **Minimal:** existing baseline, unchanged.
+2. **Playful:** first new template; the most expressive design test.
+3. Professional.
+4. Traditional.
+5. Editorial.
+6. Elegant.
 
-Each template ships with the contract test and the sandbox fixture set: short, multi-page, inclusive tax, all payment options, no / square / wide logo, all-placeholder, and **with and without a brand colour**.
+Each template ships with the contract test and the sandbox fixture set: short, multi-page, inclusive tax, all payment options, no / square / wide logo, all-placeholder, and with and without a brand colour.
 
 ## 7. Open questions
 
