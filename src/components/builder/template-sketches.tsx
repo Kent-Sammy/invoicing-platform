@@ -20,44 +20,6 @@ function Lines({ x, y, widths, gap = 7, fill, height = 2.6 }: {
   );
 }
 
-function Traditional() {
-  const navy = "#1f2a44";
-  const rule = "#c9ced8";
-  return (
-    <svg viewBox="0 0 210 297" className="size-full">
-      <rect width="210" height="297" fill="#ffffff" />
-      <rect x="18" y="20" width="22" height="22" rx="2" fill={navy} />
-      <Lines x={46} y={23} widths={[48, 34, 40]} gap={6} fill="#b8bfcc" />
-      <text x="192" y="31" textAnchor="end" fontFamily={DISPLAY} fontWeight="600" fontSize="13" letterSpacing="2.5" fill={navy}>INVOICE</text>
-      <rect x="128" y="36" width="64" height="18" fill="none" stroke={rule} strokeWidth="0.5" />
-      <line x1="128" y1="45" x2="192" y2="45" stroke={rule} strokeWidth="0.5" />
-      <rect x="18" y="60" width="174" height="1.4" fill={navy} />
-      <Lines x={18} y={70} widths={[26, 44, 36]} gap={6} fill="#b8bfcc" />
-      <line x1="105" y1="68" x2="105" y2="90" stroke={rule} strokeWidth="0.5" />
-      <Lines x={112} y={70} widths={[26, 44, 36]} gap={6} fill="#b8bfcc" />
-      <rect x="18" y="100" width="174" height="0.8" fill={navy} />
-      <rect x="18" y="108" width="174" height="0.8" fill={navy} />
-      {[0, 1, 2, 3, 4].map((row) => (
-        <g key={row}>
-          <Lines x={22} y={116 + row * 11} widths={[70]} fill="#d5d9e1" />
-          <rect x="166" y={116 + row * 11} width="22" height="2.6" rx="1.3" fill="#d5d9e1" />
-          <line x1="18" y1={123 + row * 11} x2="192" y2={123 + row * 11} stroke={rule} strokeWidth="0.4" />
-        </g>
-      ))}
-      <Lines x={128} y={182} widths={[64, 64]} gap={7} fill="#d5d9e1" />
-      <rect x="128" y="198" width="64" height="0.6" fill={navy} />
-      <text x="128" y="207" fontFamily={DISPLAY} fontWeight="600" fontSize="7" fill={navy}>Total</text>
-      <rect x="166" y="203" width="26" height="3.4" rx="1.2" fill={navy} />
-      <rect x="128" y="211" width="64" height="0.5" fill={navy} />
-      <rect x="128" y="212.6" width="64" height="0.5" fill={navy} />
-      <rect x="18" y="226" width="96" height="30" fill="none" stroke={rule} strokeWidth="0.5" />
-      <Lines x={24} y={233} widths={[30, 50, 42]} gap={6} fill="#d5d9e1" />
-      <line x1="18" y1="276" x2="192" y2="276" stroke={rule} strokeWidth="0.5" />
-      <Lines x={70} y={281} widths={[70]} fill="#d5d9e1" height={2.2} />
-    </svg>
-  );
-}
-
 function Editorial() {
   return (
     <svg viewBox="0 0 210 297" className="size-full">
@@ -131,7 +93,6 @@ function Elegant() {
 }
 
 export const TEMPLATE_SKETCHES: Record<PlannedTemplateId, () => React.JSX.Element> = {
-  traditional: Traditional,
   editorial: Editorial,
   elegant: Elegant,
 };

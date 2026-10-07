@@ -176,9 +176,9 @@ Every template defines a **default accent**, used when no brand colour is chosen
 
 0. **Groundwork:** done (see decision 026).
 1. **Minimal:** existing baseline, unchanged.
-2. **Playful:** first new template; the most expressive design test.
-3. Professional.
-4. Traditional.
+2. **Playful:** built (`4ff4b52`).
+3. **Professional:** built (`4ff4b52`).
+4. **Traditional:** built; rules-only stationery, navy accent, no signature area (no data). Awaiting review.
 5. Editorial.
 6. Elegant.
 
