@@ -4,6 +4,7 @@ import type {
   Discount,
   DocumentItem,
   Percentage,
+  TaxMode,
 } from "@/types/document";
 
 // Quantities and percentages are converted to scaled integers before any
@@ -11,12 +12,14 @@ import type {
 const QUANTITY_DECIMALS = 4;
 const PERCENT_DECIMALS = 4;
 const QUANTITY_SCALE = 10n ** BigInt(QUANTITY_DECIMALS);
-// Divides out both the percent (÷100) and the scaling of the rate.
-const PERCENT_DIVISOR = 100n * 10n ** BigInt(PERCENT_DECIMALS);
+// 100% expressed at the same scale as a scaled rate.
+const HUNDRED_PERCENT = 100n * 10n ** BigInt(PERCENT_DECIMALS);
 
 export interface TaxLine {
   label: string;
   rate: Percentage;
+  mode: TaxMode;
+  /** The net amount the tax is calculated on. */
   taxableAmount: MinorUnits;
   amount: MinorUnits;
 }
@@ -24,20 +27,24 @@ export interface TaxLine {
 export interface DocumentTotals {
   /** Rounded line totals, keyed by item id. */
   lineTotals: Record<string, MinorUnits>;
+  /** Sum of line totals. Includes tax when prices are tax-inclusive. */
   subtotal: MinorUnits;
   discount: MinorUnits;
-  /** Subtotal after discount — the base tax is calculated on. */
-  taxableSubtotal: MinorUnits;
+  /** Subtotal after discount. */
+  discountedSubtotal: MinorUnits;
+  /** Total excluding tax. */
+  net: MinorUnits;
   /** One entry per tax applied. A list so line-level or multiple taxes fit later. */
   taxes: TaxLine[];
   taxTotal: MinorUnits;
+  /** Amount payable. */
   total: MinorUnits;
 }
 
 /** Applies a percentage to an amount, rounded to the nearest minor unit. */
 export function applyPercentage(amount: MinorUnits, rate: Percentage): MinorUnits {
   return toSafeInteger(
-    divideRounded(BigInt(amount) * toScaled(rate, PERCENT_DECIMALS), PERCENT_DIVISOR),
+    divideRounded(BigInt(amount) * toScaled(rate, PERCENT_DECIMALS), HUNDRED_PERCENT),
   );
 }
 
@@ -68,11 +75,24 @@ export function calculateDiscount(subtotal: MinorUnits, discount: Discount | nul
   return Math.min(Math.max(amount, 0), subtotal);
 }
 
-/** Tax on a taxable amount, rounded once to the currency's minor unit. */
-export function calculateTax(taxableAmount: MinorUnits, rate: Percentage): MinorUnits {
-  return applyPercentage(taxableAmount, rate);
+/** Tax added on top of a net amount: 100,000 at 7.5% → 7,500. */
+export function calculateTax(netAmount: MinorUnits, rate: Percentage): MinorUnits {
+  return applyPercentage(netAmount, rate);
 }
 
+/** Tax contained in a tax-inclusive amount: 107,500 at 7.5% → 7,500. */
+export function calculateIncludedTax(grossAmount: MinorUnits, rate: Percentage): MinorUnits {
+  const scaledRate = toScaled(rate, PERCENT_DECIMALS);
+  if (scaledRate === 0n) return 0;
+  return toSafeInteger(
+    divideRounded(BigInt(grossAmount) * scaledRate, HUNDRED_PERCENT + scaledRate),
+  );
+}
+
+/**
+ * Totals for a document. Discounts apply to the subtotal as entered (net in
+ * exclusive mode, gross in inclusive mode); tax is then rounded once.
+ */
 export function calculateTotals(
   document: Pick<BusinessDocument, "items" | "discount" | "tax">,
 ): DocumentTotals {
@@ -83,27 +103,37 @@ export function calculateTotals(
 
   const subtotal = calculateSubtotal(Object.values(lineTotals));
   const discount = calculateDiscount(subtotal, document.discount);
-  const taxableSubtotal = subtotal - discount;
+  const discountedSubtotal = subtotal - discount;
 
-  const taxes: TaxLine[] = document.tax.enabled
-    ? [
-        {
-          label: document.tax.label,
-          rate: document.tax.rate,
-          taxableAmount: taxableSubtotal,
-          amount: calculateTax(taxableSubtotal, document.tax.rate),
-        },
-      ]
-    : [];
-  const taxTotal = calculateSubtotal(taxes.map((tax) => tax.amount));
+  const { tax } = document;
+  if (!tax.enabled) {
+    return {
+      lineTotals,
+      subtotal,
+      discount,
+      discountedSubtotal,
+      net: discountedSubtotal,
+      taxes: [],
+      taxTotal: 0,
+      total: discountedSubtotal,
+    };
+  }
+
+  // Exclusive: tax goes on top. Inclusive: tax is extracted, the total is unchanged.
+  const inclusive = tax.mode === "inclusive";
+  const taxAmount = inclusive
+    ? calculateIncludedTax(discountedSubtotal, tax.rate)
+    : calculateTax(discountedSubtotal, tax.rate);
+  const net = inclusive ? discountedSubtotal - taxAmount : discountedSubtotal;
 
   return {
     lineTotals,
     subtotal,
     discount,
-    taxableSubtotal,
-    taxes,
-    taxTotal,
-    total: toSafeInteger(BigInt(taxableSubtotal) + BigInt(taxTotal)),
+    discountedSubtotal,
+    net,
+    taxes: [{ label: tax.label, rate: tax.rate, mode: tax.mode, taxableAmount: net, amount: taxAmount }],
+    taxTotal: taxAmount,
+    total: toSafeInteger(BigInt(net) + BigInt(taxAmount)),
   };
 }

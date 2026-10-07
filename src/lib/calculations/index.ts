@@ -1,6 +1,7 @@
 export {
   applyPercentage,
   calculateDiscount,
+  calculateIncludedTax,
   calculateLineTotal,
   calculateSubtotal,
   calculateTax,

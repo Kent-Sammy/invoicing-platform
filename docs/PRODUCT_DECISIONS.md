@@ -49,21 +49,26 @@ src/
 │   └── dev/document/         Dev-only renderer/print sandbox (404 in production)
 ├── components/
 │   ├── ui/                   shadcn/ui primitives, restyled to our design system
-│   ├── document/             Builder state: DocumentProvider / useDocument
+│   ├── document/             Builder state: DocumentProvider / useDocument, useAssetSrc
 │   ├── editor/               Editor panel (not built yet)
 │   ├── preview/              DocumentRenderer + DocumentPage (A4 sheet)
 │   └── templates/            Template contract, registry, templates
-├── config/                   site (app name), currencies, tax presets
+├── config/                   site (app name), countries, currencies, tax presets,
+│                             payment terms, asset limits
 ├── lib/
 │   ├── money/                Minor units, exact decimal maths, parsing, formatting
 │   ├── calculations/         Line, subtotal, discount, tax, grand total
 │   ├── documents/            Document-type definitions, factory, reducer, validation, view model
 │   ├── persistence/          DocumentStore interface + localStorage adapter
+│   ├── numbering/            Document number formatting + sequence interface + guest counter
+│   ├── assets/               AssetStore interface + guest adapter + logo processing
+│   ├── guest.ts              Guest-mode wiring: the one place the browser stores are chosen
 │   ├── pdf/                  Reserved for server-side PDF, if ever needed
-│   ├── dates.ts
+│   ├── dates.ts              The only date formatting/arithmetic in the app
 │   └── utils.ts              shadcn `cn`
-├── types/                    BusinessDocument, DocumentItem, Party, TemplateId…
-└── data/                     Deterministic sample document (dev sandbox + tests)
+├── types/                    BusinessDocument, DocumentItem, Party, AssetRef, TemplateId…
+├── data/                     Deterministic sample document (dev sandbox + tests)
+└── test/                     Test helpers (in-memory Storage)
 ```
 
 Deviations from the originally proposed structure, and why:
@@ -101,9 +106,9 @@ BusinessDocument ─► calculateTotals ─► createDocumentView ─► Templat
   1. Line total = quantity × unit price, rounded per line.
   2. Subtotal = sum of rounded lines, so printed lines always add up.
   3. Discount (percentage or fixed) is clamped to between 0 and the subtotal.
-  4. Taxable subtotal = subtotal − discount.
-  5. Tax = taxable subtotal × rate, rounded once to the minor unit.
-  6. Total = taxable subtotal + tax.
+  4. Discounted subtotal = subtotal − discount.
+  5. Tax is rounded once to the minor unit: added on top (exclusive) or extracted (inclusive). See 018.
+  6. Total = net + tax.
 - Display formatting is exact too: amounts go to `Intl.NumberFormat` as decimal strings, never as floats.
 - `tsconfig` target raised from ES2017 to ES2022 for BigInt literals. This affects type-checking only; Next.js compiles for its own browser targets, all of which support BigInt.
 
@@ -129,8 +134,8 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
 **Status:** Decided by product owner · 2026-10-07
 
 - `DocumentStore` interface (`load` / `save` / `clear`, async so a remote store fits later). The guest implementation is `createLocalStorageDocumentStore`.
-- Stored under `invoice-platform:guest-draft` as `{ version, savedAt, document }`. Drafts with a different schema version, corrupt JSON, or an invalid shape are ignored rather than crashing the app.
-- `DocumentProvider` loads the draft on mount, autosaves 400 ms after the last change, flushes on `pagehide`, and exposes `reset()` to discard the draft.
+- Stored under `invoice-platform:guest-draft` as `{ version, savedAt, document }` (schema version 2 since 015–021). Drafts with a different schema version, corrupt JSON, or an invalid shape are ignored rather than crashing the app.
+- `DocumentProvider` loads the draft on mount, autosaves 400 ms after the last change, flushes on `pagehide`, and exposes `reset()`. Reset discards the draft and its logo asset, then starts a new document with the next number.
 - The store holds only the document. The model contains no payment credentials, and none may be added.
 
 ## 011 — State: one reducer, derived totals
@@ -146,7 +151,7 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
 **Status:** Decided by product owner · 2026-10-07
 
 - `config/currencies.ts`: NGN (default), USD, GBP, EUR, each with its minor units and formatting locale. Adding a currency means adding an entry.
-- `config/tax.ts`: suggested tax presets by country (Nigeria VAT 7.5%). Tax is document-level, **off by default**. Enabling it pre-fills the suggestion for the currency (NGN → "VAT 7.5%"; others → "Tax 0%").
+- `config/tax.ts`: suggested tax presets (Nigeria VAT 7.5%). Tax is document-level, **off by default**. Enabling it pre-fills the suggestion for the **business country** (see 017); it was originally keyed on currency.
 - Presets are convenience defaults for document generation, **not tax advice**; the user always sets the rate. Totals return a list of `TaxLine`s, so line-level or multiple taxes can be added without changing templates.
 
 ## 013 — Document model naming and defaults
@@ -156,7 +161,7 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
 - The entity is `BusinessDocument` rather than `Document`, to avoid shadowing the DOM's global `Document` type (a forgotten import would otherwise type-check silently against the wrong type).
 - Addresses are free-form multi-line text. Formats vary too much by country to structure yet.
 - Dates are ISO calendar strings (`"2026-10-07"`), formatted in UTC so they never shift by timezone.
-- A new document: number `INV-0001`, issue date today, **no due date**, one empty line item, Minimal template, brand colour `#171717`.
+- A new document: next number from the sequence (016), issue date today, due in 14 days (015), one empty line item, Minimal template, brand colour `#171717`.
 - `Payment` and `Receipt` types are not defined yet. They will be added when those features are designed.
 
 ## 014 — Dark mode: chrome only, paper always white
@@ -168,14 +173,85 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
 
 ---
 
+## 015 — Due date defaults to issue date + 14 days
+
+**Status:** Decided by product owner · 2026-10-07
+
+- The document stores both the concrete `dueDate` (always shown and editable) and the `paymentTerms` that produced it: `on_receipt` | `net` (n days) | `custom`.
+- New documents use `config/payment-terms.ts` → `{ type: "net", days: 14 }`.
+- These rules live in the reducer, not the UI:
+  - changing the issue date or terms re-derives the due date;
+  - editing the due date directly switches the terms to `custom`, so later issue-date changes leave it alone;
+  - an invalid or partly typed issue date never wipes the due date.
+- Presets (due on receipt, 7, 30 and 60 days) are already expressible. Only the 14-day default is offered in v1.
+
+## 016 — Numbering: automatic and editable, guest counter
+
+**Status:** Decided by product owner · 2026-10-07
+
+- `DocumentNumberSequence` interface (`lib/numbering/`). The guest implementation keeps a per-type counter in localStorage (`invoice-platform:guest-sequence`) and formats `INV-0001`, `INV-0002`, …
+- A number is **allocated when a new document is created**: on a first visit with no draft, and on reset. `number` is a plain editable string (e.g. `KDS-2026-001`).
+- Allocation runs once per mount, even under React StrictMode's double effects (verified in the browser).
+- Accounts will later swap in a server-controlled, per-business sequence behind the same interface.
+
+## 017 — Business country and locale are separate from currency
+
+**Status:** Decided by product owner · 2026-10-07
+
+- `Business` gains `country` (`config/countries.ts`: NG default, GB, US) and `locale` (BCP 47, defaulting from the country: NG → `en-NG`).
+- **Dates and plain numbers** (quantities, percentages) format with the business locale through `lib/dates.ts` and the view model. They are never formatted in components.
+- **Money** keeps formatting with the currency's own locale, so the symbol is always native. Formatting money with the business locale would print a naira amount for a US business as "NGN 1,234.50" instead of "₦1,234.50"; a USD amount for a Nigerian business would print "US$" instead of "$".
+- The country also drives defaults: currency, locale and tax suggestion. Changing the business country moves the locale unless one is given explicitly.
+
+## 018 — Tax-inclusive and tax-exclusive pricing
+
+**Status:** Decided by product owner · 2026-10-07
+
+- `DocumentTax.mode: "exclusive" | "inclusive"`, default `exclusive`.
+- **Exclusive:** total = (subtotal − discount) + tax. Example: Net ₦100,000 + VAT 7.5% ₦7,500 = ₦107,500.
+- **Inclusive:** prices already contain tax. The discount applies to the gross amount, then tax is extracted as `gross × rate / (100 + rate)`, rounded once. Net = gross − tax, so net + tax always equals the total exactly. Example: ₦107,500 contains VAT ₦7,500 and net ₦100,000.
+- `DocumentTotals` exposes `discountedSubtotal`, `net`, `taxes[]` (each with `mode` and `taxableAmount` = net) and `total`.
+- The view model presents inclusive tax as a breakdown under the total ("VAT (7.5%) included · Net · VAT"); exclusive tax is a row above the total. Templates don't branch on tax logic.
+
+## 019 — Payment details on the document
+
+**Status:** Decided by product owner · 2026-10-07
+
+- `paymentDetails: { bankName, accountName, accountNumber, instructions }` on the document. Empty fields are omitted, and the whole section is hidden if nothing is filled in.
+- This is display text the business chooses to print, not payment credentials. It is stored in the guest draft. With accounts it can move to the business profile and pre-fill new documents.
+- It sits on the document rather than inside `Business` so that a business with several accounts can choose one per invoice.
+
+## 020 — Logos are assets, referenced by id
+
+**Status:** Decided by product owner (processing approach chosen by engineering) · 2026-10-07
+
+- The document stores only `branding.logo: { assetId } | null`. Images live in an `AssetStore`. The guest implementation stores one localStorage entry per asset (`invoice-platform:asset:<id>`), separate from the draft.
+- `processLogo` runs in the browser, with no dependencies:
+  1. Accepts PNG, JPEG, WebP and SVG. Rejects other types, and files over 2 MB.
+  2. Redraws every image on a canvas, resized so the longest side is at most 1200px.
+  3. Encodes WebP, which keeps transparency, falling back to PNG where WebP encoding is unsupported (Safari).
+  4. Steps quality (0.9 → 0.7), then size (×0.75, down to 256px), until the image is at most 500 KB.
+- **SVG sanitisation by rasterisation.** SVGs are drawn to the canvas and stored as WebP, so scripts, event handlers and external references cannot survive. This needs no sanitiser library to keep patched. The tradeoff: logos print from a 1200px raster rather than vector. That is about 600 dpi at a typical 50mm logo width, which is visually lossless on paper.
+- Verified in the browser:
+  - a worst-case 1.6 MB noise PNG became a 395 KB WebP;
+  - a 4.7 MB file and a GIF were rejected;
+  - an SVG containing `<script>` became a 1200×480 WebP, and the script never ran;
+  - replacing a logo deletes the old asset.
+- Why localStorage rather than IndexedDB: simple and synchronous to test. Assets are capped at about 500 KB, so the ~5 MB quota holds a draft plus a logo with room to spare. The `AssetStore` interface allows switching to IndexedDB or cloud storage without touching callers.
+
+## 021 — Print: no page numbers, no fighting browser headers
+
+**Status:** Decided by product owner · 2026-10-07
+
+- v1 has no "Page X of Y" and no page-break markers in the live preview. Browser headers and footers are left to the user's print settings.
+- The renderer is already multi-page capable: content flows across A4 pages, table headers repeat, rows and summary blocks (totals, payment details, notes) never split. Verified by printing a 48-line tax-inclusive invoice to a 3-page PDF.
+
+---
+
 ## Open decisions
 
-- **Default due date / payment terms:** a new invoice currently has no due date. Should it default to e.g. +14 days?
-- **Invoice numbering:** always `INV-0001` for guests today. Should it be user-editable only, or auto-increment once documents are saved?
-- **Document locale:** dates and numbers currently format using the currency's locale (NGN → en-NG). Later this should probably follow the business's country.
-- **Page numbers in PDF:** CSS page-margin boxes ("Page 1 of 3") work in Chrome but not Safari or Firefox. Do we want them?
-- **Browser print headers/footers:** the browser may add the URL and date to the PDF unless the user unticks "Headers and footers". Hiding them reliably needs `@page { margin: 0 }`, which removes page margins on pages 2+. Accept, or rely on user settings?
-- **Multi-page preview:** the on-screen preview is one continuous sheet, while print paginates. Showing page breaks in the preview requires measuring content. Is that worth it for v1?
-- **Bank / payment details on invoices:** many Nigerian invoices list bank account details as payment instructions. Is this printed text in scope, given the "no sensitive payment info in storage" rule?
-- **Tax-inclusive prices:** currently all prices are tax-exclusive.
-- **Logo storage:** logos stored as data URLs count against the browser's roughly 5 MB localStorage limit. We need a size cap or image compression on upload.
+- **Gaps in guest numbering:** numbers are allocated when a document is created, so resetting a draft you never sent skips a number. Alternative: allocate on first print/download, which needs an "issued" state. Acceptable for v1?
+- **Following a custom number scheme:** if a user renames `INV-0003` to `KDS-2026-001`, should the next invoice continue as `KDS-2026-002`? Currently the guest counter continues as `INV-0004`.
+- **Carrying details to the next invoice:** reset currently clears everything, including business details, payment details and the logo. For repeat guest use, should a new invoice keep the business, payment details and logo?
+- **More countries:** NG, GB and US are configured. Which others at launch?
+- **Rounding mode:** half away from zero. Confirm this matches what Nigerian accountants expect (vs. banker's rounding).

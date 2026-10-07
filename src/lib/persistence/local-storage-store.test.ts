@@ -1,17 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { createSampleDocument } from "@/data/sample-document";
+import { createMemoryStorage } from "@/test/memory-storage";
 
 import { createLocalStorageDocumentStore } from "./local-storage-store";
-
-function createMemoryStorage(initial: Record<string, string> = {}) {
-  const data = new Map(Object.entries(initial));
-  return {
-    getItem: (key: string) => data.get(key) ?? null,
-    setItem: (key: string, value: string) => void data.set(key, value),
-    removeItem: (key: string) => void data.delete(key),
-  } as Storage;
-}
 
 const KEY = "test-draft";
 
@@ -48,12 +40,12 @@ describe("localStorage document store", () => {
   });
 
   it("ignores drafts from another schema version", async () => {
-    const stored = JSON.stringify({ version: 0, document: createSampleDocument() });
+    const stored = JSON.stringify({ version: 1, document: createSampleDocument() });
     expect(await storeWith({ [KEY]: stored }).load()).toBeNull();
   });
 
   it("ignores drafts that are not valid documents", async () => {
-    const stored = JSON.stringify({ version: 1, document: { id: "x", items: "nope" } });
+    const stored = JSON.stringify({ version: 2, document: { id: "x", items: "nope" } });
     expect(await storeWith({ [KEY]: stored }).load()).toBeNull();
   });
 });

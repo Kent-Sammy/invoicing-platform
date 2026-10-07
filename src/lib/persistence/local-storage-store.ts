@@ -7,7 +7,7 @@ export const GUEST_DRAFT_KEY = "invoice-platform:guest-draft";
 
 // Bump when BusinessDocument changes shape incompatibly; older drafts are then
 // discarded (or migrated, once we have real users' drafts worth keeping).
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 interface StoredDraft {
   version: number;

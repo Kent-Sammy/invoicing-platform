@@ -12,10 +12,13 @@ import {
   type ReactNode,
 } from "react";
 
+import type { AssetStore } from "@/lib/assets";
 import { calculateTotals, type DocumentTotals } from "@/lib/calculations";
 import { createDocument, documentReducer, type DocumentAction } from "@/lib/documents";
-import { createLocalStorageDocumentStore, type DocumentStore } from "@/lib/persistence";
-import type { BusinessDocument } from "@/types/document";
+import { guestStorage } from "@/lib/guest";
+import type { DocumentNumberSequence } from "@/lib/numbering";
+import type { DocumentStore } from "@/lib/persistence";
+import type { BusinessDocument, DocumentType } from "@/types/document";
 
 const AUTOSAVE_DELAY_MS = 400;
 
@@ -26,14 +29,13 @@ interface DocumentContextValue {
   /** Derived from `document` — never stored separately. */
   totals: DocumentTotals;
   dispatch: (action: DocumentAction) => void;
-  /** Discards the draft and starts a fresh document. */
-  reset: () => void;
+  /** Discards the draft (and its logo) and starts a new document with the next number. */
+  reset: () => Promise<void>;
   saveStatus: SaveStatus;
+  assets: AssetStore;
 }
 
 const DocumentContext = createContext<DocumentContextValue | null>(null);
-
-const guestStore = createLocalStorageDocumentStore();
 
 // Null until the saved draft (if any) has been loaded.
 function reducer(state: BusinessDocument | null, action: DocumentAction) {
@@ -45,34 +47,50 @@ interface DocumentProviderProps {
   children: ReactNode;
   /** Rendered while the saved draft loads. */
   fallback?: ReactNode;
+  type?: DocumentType;
   store?: DocumentStore;
+  assets?: AssetStore;
+  numbering?: DocumentNumberSequence;
 }
 
 /**
  * Owns the one document the editor and preview share. Loads the saved draft
- * on mount and autosaves every change through the given store.
+ * on mount (or creates a new numbered document) and autosaves every change.
  */
 export function DocumentProvider({
   children,
   fallback = null,
-  store = guestStore,
+  type = "invoice",
+  store = guestStorage.documents,
+  assets = guestStorage.assets,
+  numbering = guestStorage.numbering,
 }: DocumentProviderProps) {
   const [document, dispatch] = useReducer(reducer, null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const latest = useRef(document);
 
+  const createNew = useCallback(
+    async () => createDocument(type, { number: await numbering.next(type) }),
+    [numbering, type],
+  );
+
+  // Shared across effect re-runs (e.g. StrictMode) so a new document number
+  // is only ever allocated once per mount.
+  const initial = useRef<Promise<BusinessDocument> | null>(null);
+
   useEffect(() => {
     let cancelled = false;
-    store
+    initial.current ??= store
       .load()
       .catch(() => null)
-      .then((saved) => {
-        if (!cancelled) dispatch({ type: "replace", document: saved ?? createDocument() });
-      });
+      .then(async (saved) => saved ?? (await createNew()));
+    initial.current.then((next) => {
+      if (!cancelled) dispatch({ type: "replace", document: next });
+    });
     return () => {
       cancelled = true;
     };
-  }, [store]);
+  }, [store, createNew]);
 
   useEffect(() => {
     latest.current = document;
@@ -95,16 +113,18 @@ export function DocumentProvider({
     return () => window.removeEventListener("pagehide", flush);
   }, [store]);
 
-  const reset = useCallback(() => {
-    store.clear().catch(() => {});
-    dispatch({ type: "replace", document: createDocument() });
-  }, [store]);
+  const logo = document?.branding.logo ?? null;
+  const reset = useCallback(async () => {
+    if (logo) await assets.delete(logo.assetId).catch(() => {});
+    await store.clear().catch(() => {});
+    dispatch({ type: "replace", document: await createNew() });
+  }, [logo, assets, store, createNew]);
 
   const totals = useMemo(() => document && calculateTotals(document), [document]);
 
   const value = useMemo(
-    () => document && totals && { document, totals, dispatch, reset, saveStatus },
-    [document, totals, reset, saveStatus],
+    () => document && totals && { document, totals, dispatch, reset, saveStatus, assets },
+    [document, totals, reset, saveStatus, assets],
   );
 
   if (!value) return fallback;

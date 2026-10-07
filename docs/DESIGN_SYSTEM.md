@@ -93,7 +93,15 @@ Rules:
 - The document is designed for **A4**. On screen it renders at 210mm width, and the live preview is the PDF.
 - App chrome must carry `print:hidden`. Wrappers around the document must not constrain its width in print.
 - Helpers: `document-keep-together` keeps a block on one page; `document-page-break` starts a new page.
-- Table headers repeat on each printed page, and rows never split across pages.
+- Table headers repeat on each printed page, and rows never split across pages. Totals, payment details and notes each stay on one page.
+- **Decided (v1):** no page numbers, and no page-break markers in the live preview. Browser print headers and footers are left to the user's print settings.
+
+## Document content rules
+
+- All dates on the document use the **business locale**. All money uses the **currency's** native format (₦, $, £, €).
+- Tax-exclusive tax appears as a row above the total. Tax-inclusive tax appears as a quiet breakdown under the total: "VAT (7.5%) included", then Net and VAT.
+- Payment details print only the fields the user filled in.
+- Logos render from a processed raster (at most 1200px, WebP). The template controls display size.
 
 ## Responsive behavior
 

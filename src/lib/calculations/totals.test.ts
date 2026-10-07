@@ -5,6 +5,7 @@ import type { BusinessDocument } from "@/types/document";
 
 import {
   calculateDiscount,
+  calculateIncludedTax,
   calculateLineTotal,
   calculateSubtotal,
   calculateTax,
@@ -79,9 +80,10 @@ describe("calculateTotals", () => {
 
     expect(totals.subtotal).toBe(172_624_850);
     expect(totals.discount).toBe(17_262_485); // 10%
-    expect(totals.taxableSubtotal).toBe(155_362_365);
+    expect(totals.discountedSubtotal).toBe(155_362_365);
+    expect(totals.net).toBe(155_362_365);
     expect(totals.taxes).toEqual([
-      { label: "VAT", rate: 7.5, taxableAmount: 155_362_365, amount: 11_652_177 }, // 11,652,177.375
+      { label: "VAT", rate: 7.5, mode: "exclusive", taxableAmount: 155_362_365, amount: 11_652_177 }, // 11,652,177.375
     ]);
     expect(totals.taxTotal).toBe(11_652_177);
     expect(totals.total).toBe(167_014_542);
@@ -95,13 +97,14 @@ describe("calculateTotals", () => {
   it("applies no tax when tax is disabled", () => {
     const document: BusinessDocument = {
       ...createSampleDocument(),
-      tax: { enabled: false, label: "VAT", rate: 7.5 },
+      tax: { enabled: false, label: "VAT", rate: 7.5, mode: "exclusive" },
     };
     const totals = calculateTotals(document);
 
     expect(totals.taxes).toEqual([]);
     expect(totals.taxTotal).toBe(0);
-    expect(totals.total).toBe(totals.taxableSubtotal);
+    expect(totals.net).toBe(totals.discountedSubtotal);
+    expect(totals.total).toBe(totals.discountedSubtotal);
   });
 
   it("rounds each line before summing, so printed lines add up", () => {
@@ -112,7 +115,7 @@ describe("calculateTotals", () => {
         { id: "c", description: "", quantity: 0.5, unitPrice: 1 },
       ],
       discount: null,
-      tax: { enabled: false, label: "", rate: 0 },
+      tax: { enabled: false, label: "", rate: 0, mode: "exclusive" },
     });
 
     expect(totals.subtotal).toBe(3); // 1 + 1 + 1, not round(1.5)
@@ -122,11 +125,78 @@ describe("calculateTotals", () => {
     const totals = calculateTotals({
       items: [],
       discount: { type: "percentage", value: 10 },
-      tax: { enabled: true, label: "VAT", rate: 7.5 },
+      tax: { enabled: true, label: "VAT", rate: 7.5, mode: "exclusive" },
     });
 
     expect(totals.total).toBe(0);
     expect(totals.discount).toBe(0);
     expect(totals.taxTotal).toBe(0);
+  });
+});
+
+describe("calculateIncludedTax", () => {
+  it("extracts the tax contained in a gross amount", () => {
+    expect(calculateIncludedTax(10_750_000, 7.5)).toBe(750_000); // ₦107,500 → ₦7,500
+  });
+
+  it("rounds once to the minor unit", () => {
+    expect(calculateIncludedTax(100, 7.5)).toBe(7); // 6.976…
+    expect(calculateIncludedTax(1, 7.5)).toBe(0); // 0.0697…
+  });
+
+  it("is zero at a zero rate", () => {
+    expect(calculateIncludedTax(10_000, 0)).toBe(0);
+  });
+});
+
+describe("tax modes", () => {
+  const vat = (mode: "exclusive" | "inclusive") => ({
+    items: [{ id: "a", description: "", quantity: 1, unitPrice: 10_750_000 }],
+    discount: null,
+    tax: { enabled: true, label: "VAT", rate: 7.5, mode },
+  });
+
+  it("exclusive: adds tax on top of the net price", () => {
+    const totals = calculateTotals({
+      ...vat("exclusive"),
+      items: [{ id: "a", description: "", quantity: 1, unitPrice: 10_000_000 }],
+    });
+
+    // Net ₦100,000 + VAT ₦7,500 = ₦107,500
+    expect(totals.net).toBe(10_000_000);
+    expect(totals.taxTotal).toBe(750_000);
+    expect(totals.total).toBe(10_750_000);
+  });
+
+  it("inclusive: extracts tax from the price, total unchanged", () => {
+    const totals = calculateTotals(vat("inclusive"));
+
+    // Total ₦107,500, of which VAT ₦7,500 and net ₦100,000
+    expect(totals.total).toBe(10_750_000);
+    expect(totals.taxTotal).toBe(750_000);
+    expect(totals.net).toBe(10_000_000);
+    expect(totals.taxes[0]).toMatchObject({ mode: "inclusive", taxableAmount: 10_000_000 });
+  });
+
+  it("inclusive: net and tax always add up to the total", () => {
+    const totals = calculateTotals(createSampleDocument({ taxMode: "inclusive" }));
+
+    expect(totals.discountedSubtotal).toBe(155_362_365);
+    expect(totals.taxTotal).toBe(10_839_235); // 10,839,234.767…
+    expect(totals.net).toBe(144_523_130);
+    expect(totals.net + totals.taxTotal).toBe(totals.total);
+    expect(totals.total).toBe(155_362_365);
+  });
+
+  it("inclusive: discounts reduce the gross amount before tax is extracted", () => {
+    const totals = calculateTotals({
+      ...vat("inclusive"),
+      discount: { type: "fixed", amount: 750_000 },
+    });
+
+    expect(totals.discountedSubtotal).toBe(10_000_000);
+    expect(totals.taxTotal).toBe(697_674); // 697,674.418…
+    expect(totals.net).toBe(9_302_326);
+    expect(totals.total).toBe(10_000_000);
   });
 });

@@ -167,7 +167,31 @@ Do not simply shrink the desktop interface. Mobile must be intentionally designe
 
 The product experience comes first.
 
-## 10. Working agreement
+## 10. Locked product decisions (2026-10-07)
+
+These are recorded in detail in `PRODUCT_DECISIONS.md`.
+
+- **Money:** stored as integer minor units (kobo, cents). Deterministic rounding; tax is rounded once to the currency's minor unit.
+- **PDF:** the HTML/CSS preview is the PDF. "Download PDF" uses browser print / Save as PDF for now. No separate PDF renderer. Preview and PDF must match.
+- **Guest persistence:** the draft autosaves to the browser and restores on refresh, and can be reset. No authentication. No payment credentials are stored.
+- **Dark mode:** applies to the app UI only. The invoice is always a white paper document.
+- **Testing:** Vitest for business logic.
+- **Currencies:** NGN (default), USD, GBP, EUR, defined as configuration.
+- **Tax:** invoice-level, user enables it and sets the rate. Nigeria suggests VAT 7.5%, which is a suggestion, not tax advice. Prices can be tax-exclusive or tax-inclusive.
+- **UI:** shadcn/ui + Radix + Tailwind, Lucide icons, Motion only for usability and subtle polish.
+- **Name:** "Invoice Platform" is a temporary internal name, defined in one place.
+- **State:** no Redux. One source of truth for the current document.
+- **Due date:** defaults to issue date + 14 days. It is shown and editable, with room for presets later.
+- **Numbering:** automatic (INV-0001, INV-0002, … via a local guest sequence) and editable (e.g. KDS-2026-001). Server-side numbering comes with accounts.
+- **Dates:** follow the business country and locale (default Nigeria, en-NG), independent of currency.
+- **Print:** no page numbers in v1. Browser headers and footers are left to the user. No page-break markers in the preview, but documents may span multiple pages.
+- **Payment details:** an optional section with bank name, account name, account number and instructions. It is display text the business chooses to print, not a payment credential.
+- **Logos:** stored as assets and referenced from the draft. Guest assets live in the browser, processed under these limits:
+  - original uploads up to about 2 MB;
+  - compressed to about 500 KB, WebP, transparency preserved;
+  - SVGs sanitised before use.
+
+## 11. Working agreement
 
 - The product designer / product owner owns product decisions.
 - Engineering does not silently make major product decisions.

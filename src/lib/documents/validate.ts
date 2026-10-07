@@ -1,3 +1,4 @@
+import { isCountryCode } from "@/config/countries";
 import { isCurrencyCode } from "@/config/currencies";
 import type { BusinessDocument } from "@/types/document";
 
@@ -14,19 +15,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  */
 export function isBusinessDocument(value: unknown): value is BusinessDocument {
   if (!isRecord(value)) return false;
+  const { business, tax, paymentTerms, paymentDetails, branding, items } = value;
   return (
     typeof value.id === "string" &&
     typeof value.type === "string" &&
     Object.hasOwn(DOCUMENT_TYPES, value.type) &&
     typeof value.number === "string" &&
     typeof value.issueDate === "string" &&
+    typeof value.dueDate === "string" &&
+    isRecord(paymentTerms) &&
+    typeof paymentTerms.type === "string" &&
     isCurrencyCode(value.currency) &&
-    isRecord(value.business) &&
+    isRecord(business) &&
+    isCountryCode(business.country) &&
+    typeof business.locale === "string" &&
     isRecord(value.client) &&
-    isRecord(value.tax) &&
-    isRecord(value.branding) &&
-    Array.isArray(value.items) &&
-    value.items.every(
+    isRecord(tax) &&
+    (tax.mode === "exclusive" || tax.mode === "inclusive") &&
+    isRecord(paymentDetails) &&
+    isRecord(branding) &&
+    (branding.logo === null || (isRecord(branding.logo) && typeof branding.logo.assetId === "string")) &&
+    Array.isArray(items) &&
+    items.every(
       (item) =>
         isRecord(item) &&
         typeof item.id === "string" &&
