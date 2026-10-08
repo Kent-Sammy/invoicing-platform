@@ -1,11 +1,28 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { createContext, use, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+
+const FieldIdPrefix = createContext("");
+
+/**
+ * Prefixes field ids below it, so a second editor on the same page (the
+ * landing page's live demo) never duplicates the builder's ids. The builder
+ * itself uses no prefix.
+ */
+export function FieldIdScope({ prefix, children }: { prefix: string; children: ReactNode }) {
+  return <FieldIdPrefix value={prefix}>{children}</FieldIdPrefix>;
+}
+
+/** Returns a function mapping a field name to its (possibly prefixed) id. */
+export function useFieldId(): (name: string) => string {
+  const prefix = use(FieldIdPrefix);
+  return (name) => prefix + name;
+}
 
 interface EditorSectionProps {
   title: string;

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import type { DocumentView, DocumentViewPayment } from "@/lib/documents";
 
-import { isSampleParty, LogoMark, PayLink, PaymentQr, SampleText as Line } from "../kit";
+import { DefinitionRows, isSampleParty, LogoMark, PayLink, PaymentQr, SampleText as Line } from "../kit";
 import type { TemplateProps } from "../types";
 
 // Minimal: a quiet, typographic invoice. Sizes are in pt/mm so the screen
@@ -64,12 +64,7 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
   return (
     <div className="document-keep-together mt-[5mm] ml-auto w-[80mm] tabular-nums" data-placeholder={sample}>
       <dl className="grid grid-cols-[1fr_auto] gap-y-[1.4mm]">
-        {view.summary.map((row) => (
-          <div key={row.label} className="contents">
-            <dt className="text-doc-ink-muted">{row.label}</dt>
-            <dd className="text-right">{row.amount}</dd>
-          </div>
-        ))}
+        <DefinitionRows rows={view.summary} labelClassName="text-doc-ink-muted" valueClassName="text-right" />
         <dt className="border-doc-ink mt-[1.5mm] border-t pt-[2.5mm] text-[10.5pt] font-semibold">
           {view.total.label}
         </dt>
@@ -80,12 +75,7 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
       {view.taxBreakdown && (
         <dl className="text-doc-ink-muted mt-[3mm] grid grid-cols-[1fr_auto] gap-y-[0.6mm] text-[8pt]">
           <dt className="col-span-2">{view.taxBreakdown.note}</dt>
-          {view.taxBreakdown.lines.map((row) => (
-            <div key={row.label} className="contents">
-              <dt>{row.label}</dt>
-              <dd className="text-right">{row.amount}</dd>
-            </div>
-          ))}
+          <DefinitionRows rows={view.taxBreakdown.lines} valueClassName="text-right" />
         </dl>
       )}
     </div>
@@ -103,12 +93,7 @@ function PaymentSection({ payment }: { payment: DocumentViewPayment }) {
           <div>
             <p className="mb-[1.2mm] font-semibold">{bankTransfer.title}</p>
             <dl className="grid grid-cols-[auto_1fr] gap-x-[5mm] gap-y-[0.8mm]">
-              {bankTransfer.fields.map((field) => (
-                <div key={field.label} className="contents">
-                  <dt className="text-doc-ink-muted">{field.label}</dt>
-                  <dd className="font-medium tabular-nums">{field.value}</dd>
-                </div>
-              ))}
+              <DefinitionRows rows={bankTransfer.fields} labelClassName="text-doc-ink-muted" valueClassName="font-medium tabular-nums" />
             </dl>
             {bankTransfer.instructions && (
               <p className="text-doc-ink-muted mt-[2mm] whitespace-pre-line">{bankTransfer.instructions}</p>

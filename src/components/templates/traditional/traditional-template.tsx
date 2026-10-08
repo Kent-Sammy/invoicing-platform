@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import type { DocumentView, DocumentViewPayment } from "@/lib/documents";
 
-import { isSampleParty, LogoMark, PayLink, PaymentQr, SampleText } from "../kit";
+import { DefinitionRows, isSampleParty, ItemDescription, LogoMark, PayLink, PaymentQr, SampleText } from "../kit";
 import type { TemplateProps } from "../types";
 
 // Traditional: conventional business stationery. Built from rules and type
@@ -86,17 +86,6 @@ function Party({ view, party }: { view: DocumentView; party: "business" | "clien
   );
 }
 
-/** First description line reads as the item name; further lines as detail. */
-function Description({ text }: { text: string }) {
-  const [name, ...detail] = text.split("\n");
-  return (
-    <>
-      <p>{name}</p>
-      {detail.length > 0 && <p className="text-doc-ink-muted whitespace-pre-line">{detail.join("\n")}</p>}
-    </>
-  );
-}
-
 function Items({ view, sample }: { view: DocumentView; sample: true | undefined }) {
   const { labels } = view;
   const head = "border-doc-brand-text border-y-[0.4mm] py-[2mm] font-semibold";
@@ -116,7 +105,7 @@ function Items({ view, sample }: { view: DocumentView; sample: true | undefined 
           <tr key={item.id} className="border-doc-rule border-b align-top last:border-b-0" data-placeholder={sample}>
             <td className="text-doc-ink-muted py-[2.4mm]">{index + 1}.</td>
             <td className="py-[2.4mm] pr-[4mm]">
-              <Description text={item.description} />
+              <ItemDescription text={item.description} detailClassName="text-doc-ink-muted whitespace-pre-line" />
             </td>
             <td className="py-[2.4mm] text-right">{item.quantity}</td>
             <td className="py-[2.4mm] text-right">{item.unitPrice}</td>
@@ -132,12 +121,7 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
   return (
     <div className="document-keep-together tabular-nums" data-placeholder={sample}>
       <dl className="grid grid-cols-[1fr_auto] gap-y-[1.3mm]">
-        {view.summary.map((row) => (
-          <div key={row.label} className="contents">
-            <dt className="text-doc-ink-muted">{row.label}</dt>
-            <dd className="text-right">{row.amount}</dd>
-          </div>
-        ))}
+        <DefinitionRows rows={view.summary} labelClassName="text-doc-ink-muted" valueClassName="text-right" />
       </dl>
       {/* Grand total: a rule above, the accounting double rule below. */}
       <div className="border-doc-brand-text mt-[2.5mm] flex items-baseline justify-between border-t-[0.35mm] pt-[2.2mm] pb-[1.6mm]">
@@ -148,12 +132,7 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
       {view.taxBreakdown && (
         <dl className="text-doc-ink-muted mt-[2.5mm] grid grid-cols-[1fr_auto] gap-y-[0.5mm] text-[8pt]">
           <dt className="col-span-2">{view.taxBreakdown.note}</dt>
-          {view.taxBreakdown.lines.map((row) => (
-            <div key={row.label} className="contents">
-              <dt>{row.label}</dt>
-              <dd className="text-right">{row.amount}</dd>
-            </div>
-          ))}
+          <DefinitionRows rows={view.taxBreakdown.lines} valueClassName="text-right" />
         </dl>
       )}
     </div>
@@ -170,12 +149,7 @@ function PaymentInformation({ payment }: { payment: DocumentViewPayment | null }
         <div className="mt-[2.5mm]">
           <p className="font-semibold">{bankTransfer.title}</p>
           <dl className="mt-[0.8mm] grid grid-cols-[auto_1fr] gap-x-[5mm] gap-y-[0.5mm]">
-            {bankTransfer.fields.map((field) => (
-              <div key={field.label} className="contents">
-                <dt className="text-doc-ink-muted">{field.label}</dt>
-                <dd className="tabular-nums">{field.value}</dd>
-              </div>
-            ))}
+            <DefinitionRows rows={bankTransfer.fields} labelClassName="text-doc-ink-muted" valueClassName="tabular-nums" />
           </dl>
           {bankTransfer.instructions && (
             <p className="text-doc-ink-muted mt-[1.5mm] whitespace-pre-line">{bankTransfer.instructions}</p>

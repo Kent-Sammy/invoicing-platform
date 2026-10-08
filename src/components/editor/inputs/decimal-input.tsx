@@ -8,14 +8,12 @@ const DECIMAL = /^\d*\.?\d{0,4}$/;
 
 interface DecimalInputProps
   extends Omit<FormattedInputProps, "format" | "parse"> {
-  /** Largest accepted value (e.g. 100 for percentages). */
-  max?: number;
   /** Text shown after the number, e.g. "%". */
   suffix?: string;
 }
 
 /** Non-negative number with up to 4 decimal places (quantities, rates). */
-export function DecimalInput({ max, suffix, className, ...props }: DecimalInputProps) {
+export function DecimalInput({ suffix, className, ...props }: DecimalInputProps) {
   return (
     <div className="relative">
       <FormattedInput
@@ -25,8 +23,7 @@ export function DecimalInput({ max, suffix, className, ...props }: DecimalInputP
         parse={(text) => {
           const cleaned = text.replace(/[,\s]/g, "");
           if (!DECIMAL.test(cleaned) || cleaned === ".") return null;
-          const value = Number(cleaned);
-          return max !== undefined && value > max ? null : value;
+          return Number(cleaned);
         }}
       />
       {suffix && (

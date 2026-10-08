@@ -174,7 +174,7 @@ The product experience comes first.
 These are recorded in detail in `PRODUCT_DECISIONS.md`.
 
 - **Money:** stored as integer minor units (kobo, cents). Deterministic rounding; tax is rounded once to the currency's minor unit.
-- **PDF:** the HTML/CSS preview is the PDF. "Download PDF" uses browser print / Save as PDF for now. No separate PDF renderer. Preview and PDF must match.
+- **PDF:** the HTML/CSS preview is the PDF. "Save / Print PDF" uses browser print / Save as PDF for now. No separate PDF renderer. Preview and PDF must match.
 - **Guest persistence:** the draft autosaves to the browser and restores on refresh, and can be reset. No authentication. No payment credentials are stored.
 - **Dark mode:** applies to the app UI only. It never changes the invoice.
 - **Template visual freedom (revised 2026-10-07):** each template owns its paper (white, tinted, coloured or dark), may use edge-to-edge colour when that's part of its identity, and may include built-in decorative artwork. Users customise only the logo, brand colour, business information and invoice data. There is no visual editor. Rendering is optimised for screen and PDF; there is no separate print-friendly theme yet.

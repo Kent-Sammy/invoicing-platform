@@ -1,3 +1,6 @@
+/** Longer links are refused: real payment links are far shorter, and a QR code must still scan. */
+export const MAX_PAYMENT_URL_LENGTH = 500;
+
 /**
  * Turns user input into a safe, absolute payment URL, or null if it isn't
  * one. Only http(s) links are allowed — never javascript:, data:, etc. —
@@ -6,7 +9,7 @@
  */
 export function normalizePaymentUrl(input: string): string | null {
   const trimmed = input.trim();
-  if (trimmed === "" || /\s/.test(trimmed)) return null;
+  if (trimmed === "" || /\s/.test(trimmed) || trimmed.length > MAX_PAYMENT_URL_LENGTH) return null;
 
   const hasScheme = /^[a-z][a-z\d+.-]*:/i.test(trimmed);
   const candidate = hasScheme ? trimmed : `https://${trimmed}`;

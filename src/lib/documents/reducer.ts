@@ -36,20 +36,23 @@ export type DocumentAction =
 /**
  * Keeps issue date, due date and payment terms consistent:
  * - picking a due date directly switches the terms to custom;
- * - otherwise, changing the issue date or terms re-derives the due date.
+ * - otherwise, changing the issue date or terms re-derives the due date;
+ * - the due date is never before the issue date.
  */
 function applyDateRules(
   document: BusinessDocument,
   changes: Partial<DocumentFields>,
 ): BusinessDocument {
+  let next = document;
   if ("dueDate" in changes && !("paymentTerms" in changes)) {
-    return { ...document, paymentTerms: { type: "custom" } };
+    next = { ...next, paymentTerms: { type: "custom" } };
+  } else if ("issueDate" in changes || "paymentTerms" in changes) {
+    const dueDate = dueDateFor(next.issueDate, next.paymentTerms);
+    if (dueDate) next = { ...next, dueDate };
   }
-  if ("issueDate" in changes || "paymentTerms" in changes) {
-    const dueDate = dueDateFor(document.issueDate, document.paymentTerms);
-    if (dueDate) return { ...document, dueDate };
-  }
-  return document;
+  // A document is never due before it's issued (ISO dates compare as text).
+  if (next.dueDate < next.issueDate) next = { ...next, dueDate: next.issueDate };
+  return next;
 }
 
 /** Changing the business country also moves the locale, unless one is given. */

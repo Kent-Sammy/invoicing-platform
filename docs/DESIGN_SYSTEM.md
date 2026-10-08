@@ -86,12 +86,19 @@ Rules:
 
 - **Decided (PRD):** dark mode applies to app chrome only (editor, navigation, controls, settings).
 - **Decided:** the app's dark mode never affects the invoice. The invoice's paper belongs to its template (decision 024): Elegant may be dark and Editorial coloured, whatever the app theme.
-- **Current state:** tokens exist for light and `.dark` (class-based). There is no theme toggle yet.
+- **Theme switching (2026-10-08):** light and dark across the landing page and the builder.
+  - The device setting is followed until the visitor chooses; the choice is stored as `nuhmera:theme`.
+  - A script in `<head>` (`components/theme/theme.ts`) sets `.dark` before the first paint, so there's no flash.
+  - `ThemeToggle` (a moon/sun switch) sits in the landing nav and the builder header, and crossfades with the View Transitions API where it's supported and motion is allowed.
+- **Landing in dark:** theme-aware page tokens (`bg-page`, `text-page-fg`, `text-page-muted`, `border-page-line`…) defined in `landing.css`, with a moonlit version of the mist. The final CTA and footer stay dark in both themes, with a hairline separating the CTA in dark. The demos show the real builder in its dark theme.
 
 ## Print
 
-- The document is designed for **A4**. On screen it renders at 210mm width, and the live preview is the PDF.
+- The document is designed for **A4**. On screen it renders at 210mm width, and the live preview matches the PDF exactly.
+- **The print source is separate from the preview:** `PrintDocumentRoot` renders the same document, hidden on screen and shown only in print. The scaled or hidden preview never prints, so printing works whether or not the preview was ever opened (decision 027).
 - App chrome must carry `print:hidden`. Wrappers around the document must not constrain its width in print.
+- **Text safety (page layer):** `.document-page` sets `overflow-wrap: anywhere`, so long emails, URLs and codes wrap inside their column. Right-aligned `td`/`th`/`dd` cells (numbers) never break, and adjacent numeric columns keep a 2.5mm minimum gap. Templates don't need their own overflow handling.
+- **Before printing:** "Save / Print PDF" lives in the Ready stage, which is reachable only once the invoice has a business name, a client, an item with a description and an invoice number (decision 028).
 - Helpers: `document-keep-together` keeps a block on one page; `document-page-break` starts a new page.
 - Table headers repeat on each printed page, and rows never split across pages. Totals, payment details and notes each stay on one page.
 - **Decided (v1):** no page numbers, and no page-break markers in the live preview. Browser print headers and footers are left to the user's print settings.
@@ -115,22 +122,34 @@ From the PRD:
 
 - _Not yet decided:_ exact breakpoints, the mobile preview mechanism (toggle, sheet, or tab), and how the A4 sheet scales to fit narrow preview panes.
 
+## Invoice journey (decision 028)
+
+- **Header:** product name · stepper (1 Template · 2 Create · 3 Ready; phones show only the current step's label) · autosave status · New. There's no Save or Print button in the header.
+- **Template:** full-width page titled "How should your invoice look?" over the six live cards (3 columns, 2 on phones). A footer shows the selected template and **Continue →**.
+- **Create:** the editor and live preview, with a footer pinned under the editor showing the total and **Review invoice →**. While it's disabled, a one-line hint says what's missing. On phones the same footer adds an icon Preview button.
+- **Ready:** a 360px panel (check, "Your invoice is ready", number · client · due date, total, **Save / Print PDF**, the print-dialog hint, **Copy payment link** when there is one, Edit invoice, Start a new invoice) beside the invoice at hero size, exactly as it prints. On phones the panel sits above the invoice.
+
 ## Invoice builder (v1 refinement, 2026-10-07)
 
 - **Layout:** the builder lives at `/create` (`/` redirects there until a landing page exists).
   - Desktop (≥1024px): editor (400–420px) | live preview on the `canvas` workspace. The preview is the visual hero; the A4 sheet scales to fill its pane, up to 1.25×.
-  - Below 1024px: single-column editor with a pinned total and a **Preview** button that opens the document full-screen.
-- **Editor hierarchy:** Your business → Client → Invoice details → **Items** (focal section, tinted) → Adjustments → Payment → Notes.
+  - Below 1024px: single-column editor with a pinned total and a **Preview** button that opens the document full-screen as a modal dialog. Focus moves to Close and returns on exit, the page behind is inert, and Escape closes it.
+- **Editor hierarchy:** Your business → Client → Invoice → **Items** (focal section, tinted; tax, discount and total sit under the subtotal) → Payment → Appearance (template and brand colour) → Notes & terms.
   - Section labels are small uppercase captions; controls are 32px tall with 13px text (16px on mobile so iOS doesn't zoom).
   - Progressive disclosure: only essential fields are visible. Secondary fields sit behind quiet "+ Add …" links (contact details, tax information, address & phone). Payment and Notes collapse to a single line until opened. Anything with existing content opens automatically.
 - **Placeholders:** empty fields show marked sample content (grey, dotted underline) in the preview so it never looks broken. Sample content never prints.
 - **Logo:** sized by aspect ratio at a constant visual area (`logoSize`), so square marks and wide wordmarks carry equal weight. The editor's logo tile takes the logo's shape.
 - **Paper:** the sheet is rectangular, with a hairline edge and a soft shadow on the canvas. Never a rounded card.
 - **No tooling UI:** the Next.js dev indicator is disabled (`devIndicators: false`).
+- **Item descriptions:** multi-line. The first line is the item name; Shift + Enter adds a detail line printed beneath it. Enter adds the next item on desktop. On touch keyboards, Enter starts a new line.
+- **Limits:** amounts over 999,999,999,999.99 per line, or quantities over 1,000,000, show an inline message under the row and aren't applied.
+- **Errors:** a render failure is contained. A preview that can't render shows a calm notice and retries on the next edit; the builder itself has a recovery screen.
+- **Save status:** "Saved in this browser" (an icon on phones), "Not saved" when storage is full, or "Not saved in this browser" when the browser blocks storage.
+- **Brand colour:** in Appearance, the row shows the swatch and its name ("Template default", a preset name or the hex value). Change opens a popover with template default, nine presets, a custom colour picker and a hex field. Changes apply to the preview immediately.
 
 ## Template gallery (2026-10-07)
 
-- **Entry:** a "Template" row at the top of the editor ("Playful · Expressive & creative" + Change).
+- **Entry:** the Template stage, and Appearance → Template → Change while creating (the gallery takes over the editor column; Done returns to Appearance).
 - **Gallery:** takes over the editor column while open, so the live preview stays visible and updates on every selection. "Done" returns to the editor. The editor/preview split is unchanged.
 - **Cards:** a large live thumbnail (the user's own invoice rendered by the real template; sample content when empty), then the name and a short subtext. 3 columns when the column is at least 22rem wide, otherwise 2 (container query).
 - **States:** 1px border; hover strengthens the border; selected = foreground border plus a small check.

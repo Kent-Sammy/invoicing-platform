@@ -9,7 +9,7 @@ import type { BusinessDocument } from "@/types/document";
 
 import { DocumentPage } from "./document-page";
 
-interface DocumentRendererProps {
+export interface DocumentRendererProps {
   document: BusinessDocument;
   /** The resolved logo image; the document itself only holds a reference. */
   logo?: DocumentLogo | null;

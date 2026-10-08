@@ -1,0 +1,296 @@
+/*
+ * Landing page atmosphere: ONE visual language — soft grayscale light,
+ * like mist over still water. Pure CSS, no imagery, no colour.
+ */
+
+.landing {
+  /* Light: ink on warm paper. */
+  --page: var(--color-paper);
+  --page-fg: var(--color-ink);
+  --page-muted: #525252;
+  --page-faint: #737373;
+  --page-dim: #a3a3a3;
+  --page-line: rgb(11 11 12 / 0.1);
+  --page-line-soft: rgb(11 11 12 / 0.06);
+  --page-line-strong: rgb(11 11 12 / 0.15);
+  --page-canvas: #efefed;
+  --mist-core: rgb(255 255 255 / 0.95);
+  --mist-a: rgb(214 218 222 / 0.55);
+  --mist-b: rgb(206 211 216 / 0.5);
+  --mist-band: rgb(11 11 12 / 0.035);
+
+  font-family: var(--font-onest), sans-serif;
+  background: var(--page);
+  color: var(--page-fg);
+}
+
+/* Dark: the same page at night — warm off-white on near-black. The final
+   CTA and footer are dark in both themes. */
+.dark .landing {
+  --page: #0e0e10;
+  --page-fg: #f2f2ef;
+  --page-muted: #a1a1a1;
+  --page-faint: #8b8b8b;
+  --page-dim: #5e5e62;
+  --page-line: rgb(255 255 255 / 0.1);
+  --page-line-soft: rgb(255 255 255 / 0.07);
+  --page-line-strong: rgb(255 255 255 / 0.18);
+  --page-canvas: #18181b;
+  --mist-core: rgb(255 255 255 / 0.07);
+  --mist-a: rgb(160 170 180 / 0.08);
+  --mist-b: rgb(150 160 170 / 0.07);
+  --mist-band: rgb(255 255 255 / 0.04);
+}
+
+/* A wide, low band of light the product rises out of. */
+.landing-mist {
+  position: absolute;
+  inset: auto -10% 0;
+  height: 70%;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 55% at 50% 62%, var(--mist-core), transparent 70%),
+    radial-gradient(70% 45% at 30% 70%, var(--mist-a), transparent 70%),
+    radial-gradient(70% 45% at 72% 66%, var(--mist-b), transparent 70%);
+  filter: blur(8px);
+}
+
+/* Faint horizontal banding — the water. Masked so it fades at every edge. */
+.landing-mist::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--mist-band) 0 1px,
+    transparent 1px 14px
+  );
+  mask-image: radial-gradient(55% 50% at 50% 65%, black, transparent 75%);
+  animation: landing-drift 28s ease-in-out infinite alternate;
+}
+
+/* The dark final section: the same band, seen at night. */
+.landing-night {
+  background:
+    radial-gradient(60% 40% at 50% 115%, rgb(255 255 255 / 0.16), transparent 70%),
+    radial-gradient(40% 30% at 35% 110%, rgb(255 255 255 / 0.08), transparent 70%),
+    var(--color-ink);
+}
+
+.landing-night::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 16px);
+  mask-image: radial-gradient(60% 55% at 50% 100%, black, transparent 75%);
+  animation: landing-drift 32s ease-in-out infinite alternate;
+}
+
+@keyframes landing-drift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(14px);
+  }
+}
+
+/* The hero's scripted typing: the field being "typed" in is quietly marked. */
+.hero-product [data-demo-active] {
+  border-color: var(--page-fg);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--page-fg) 10%, transparent);
+  transition: box-shadow 200ms, border-color 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-mist::after,
+  .landing-night::before {
+    animation: none;
+  }
+}
+
+/*
+ * Motion system — quiet, precise. Only opacity and transform, one easing
+ * curve, and nothing at all when the visitor prefers reduced motion.
+ */
+.landing {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Hero entrance: the page assembles itself, top to bottom. CSS-only, so it
+   runs from the first paint and needs no JavaScript. */
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-y, 8px)) scale(var(--rise-scale, 1));
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-enter {
+    animation: landing-rise var(--rise-duration, 500ms) var(--ease-out) var(--rise-delay, 0ms) both;
+  }
+}
+
+.landing-enter-eyebrow {
+  --rise-delay: 0ms;
+}
+.landing-enter-headline {
+  --rise-y: 12px;
+  --rise-duration: 650ms;
+  --rise-delay: 90ms;
+}
+.landing-enter-text {
+  --rise-delay: 220ms;
+}
+.landing-enter-cta {
+  --rise-delay: 300ms;
+}
+.landing-enter-product {
+  --rise-y: 20px;
+  --rise-scale: 0.98;
+  --rise-duration: 800ms;
+  --rise-delay: 450ms;
+  transform-origin: 50% 0;
+}
+
+/* Scroll reveals. Hidden only once the observer is running (so content is
+   never lost without JavaScript) and only when motion is welcome. */
+/* Only the reveal is animated: hiding is instant, so nothing ever fades out. */
+.landing [data-reveal][data-revealed],
+.landing [data-reveal-group][data-revealed] > * {
+  transition:
+    opacity 600ms var(--ease-out),
+    transform 600ms var(--ease-out);
+}
+
+/* Related items arrive with a very small stagger. */
+.landing [data-reveal-group][data-revealed] > * {
+  transition-delay: calc(var(--reveal-index, 0) * 60ms);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing[data-reveal-ready] [data-reveal]:not([data-revealed]),
+  .landing[data-reveal-ready] [data-reveal-group]:not([data-revealed]) > * {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* Buttons. Primary: lifts 2px with a deeper, soft (never glowing) shadow;
+   presses down slightly. The arrow nudges right; the label never moves. */
+.landing-button {
+  transition:
+    transform 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out),
+    background-color 200ms var(--ease-out),
+    border-color 200ms var(--ease-out);
+}
+
+.landing-button-primary {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.06),
+    0 4px 10px rgb(0 0 0 / 0.05);
+}
+
+.landing-button-primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 0.08),
+    0 12px 28px rgb(0 0 0 / 0.06);
+}
+
+.landing-button-primary:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 100ms;
+}
+
+/* Header outline button: a quieter version of the same gesture. */
+.landing-button-outline:hover {
+  transform: translateY(-1px);
+  background-color: color-mix(in srgb, var(--page-fg) 4%, transparent);
+  border-color: color-mix(in srgb, var(--page-fg) 30%, transparent);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
+}
+
+.landing-button-outline:active {
+  transform: translateY(0) scale(0.99);
+  transition-duration: 100ms;
+}
+
+.landing-button-arrow {
+  transition: transform 220ms var(--ease-out);
+}
+
+.landing-button:hover .landing-button-arrow {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-button:hover,
+  .landing-button:active,
+  .landing-button:hover .landing-button-arrow {
+    transform: none;
+  }
+}
+
+/* How It Works: each step's rule becomes a loader while hovered — it drains
+   to the right, refills from the left, and loops. Full line at rest. */
+@keyframes landing-loader {
+  0% {
+    transform: scaleX(1);
+    transform-origin: right;
+  }
+  45% {
+    transform: scaleX(0);
+    transform-origin: right;
+  }
+  50% {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  95%,
+  100% {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-step:hover .landing-step-line {
+    animation: landing-loader 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+}
+
+/* The Details: hovering a row draws its hairline in ink, left to right; on
+   leaving, the ink slides away to the right. One stroke, no loop. */
+.landing-detail-line {
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 550ms var(--ease-out);
+}
+
+.landing-detail:hover .landing-detail-line {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-detail-line {
+    transition: none;
+  }
+}
+
+/* In-page links (footer, nav) glide rather than jump. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.landing) {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Footer wordmark: the Nuhmera logo across the full content width, its
+   lower edge running off the page. */
+.landing-wordmark {
+  margin-bottom: -2.2%;
+}

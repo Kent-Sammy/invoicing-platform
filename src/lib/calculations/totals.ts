@@ -137,3 +137,17 @@ export function calculateTotals(
     total: toSafeInteger(BigInt(net) + BigInt(taxAmount)),
   };
 }
+
+/**
+ * True if the document's totals can be calculated exactly. False when the
+ * amounts are so large they would leave the safe integer range — such a
+ * state is never accepted into the editor (see DocumentProvider).
+ */
+export function isCalculable(document: Pick<BusinessDocument, "items" | "discount" | "tax">): boolean {
+  try {
+    calculateTotals(document);
+    return true;
+  } catch {
+    return false;
+  }
+}

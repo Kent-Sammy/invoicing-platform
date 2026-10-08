@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 
 import { Input } from "@/components/ui/input";
 
@@ -12,6 +12,10 @@ export interface FormattedInputProps
   format: (value: number) => string;
   /** Parses typed text; null means "not valid yet" and leaves the value unchanged. */
   parse: (text: string) => number | null;
+  /** Largest accepted value. Larger input is shown as invalid and never committed. */
+  max?: number;
+  /** Told whenever typed input starts or stops exceeding `max`. */
+  onExceedsMax?: (exceeds: boolean) => void;
 }
 
 /**
@@ -23,12 +27,20 @@ export function FormattedInput({
   onValueChange,
   format,
   parse,
+  max,
+  onExceedsMax,
   onFocus,
   onBlur,
   ...props
 }: FormattedInputProps) {
   const [draft, setDraft] = useState<string | null>(null);
-  const invalid = draft !== null && draft.trim() !== "" && parse(draft) === null;
+  const parsed = draft === null || draft.trim() === "" ? null : parse(draft);
+  const exceeds = parsed !== null && max !== undefined && parsed > max;
+  const invalid = draft !== null && draft.trim() !== "" && (parsed === null || exceeds);
+
+  useEffect(() => {
+    onExceedsMax?.(exceeds);
+  }, [exceeds, onExceedsMax]);
 
   return (
     <Input
@@ -45,8 +57,8 @@ export function FormattedInput({
       onChange={(event) => {
         const text = event.target.value;
         setDraft(text);
-        const parsed = text.trim() === "" ? 0 : parse(text);
-        if (parsed !== null) onValueChange(parsed);
+        const next = text.trim() === "" ? 0 : parse(text);
+        if (next !== null && (max === undefined || next <= max)) onValueChange(next);
       }}
       onBlur={(event) => {
         setDraft(null);

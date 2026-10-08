@@ -6,11 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { formatMoney } from "@/lib/money";
-import type { DocumentTax, TaxMode } from "@/types/document";
+import type { Discount, DocumentTax, TaxMode } from "@/types/document";
 
 import { DecimalInput } from "./inputs/decimal-input";
 import { MoneyInput } from "./inputs/money-input";
-import { EditorSection, Field } from "./editor-section";
+import { Field, useFieldId } from "./editor-section";
 
 function Segmented<T extends string>({
   value,
@@ -73,23 +73,35 @@ function ToggleRow({
   );
 }
 
+/**
+ * Switching between percent and amount keeps the discount the client gets:
+ * ₦50,000 off ₦500,000 becomes 10%, and back. Percentages keep 2 decimals.
+ */
+function convertDiscount(type: Discount["type"], amount: number, subtotal: number): Discount {
+  if (type === "fixed") return { type, amount };
+  const value = subtotal > 0 ? Math.round((amount / subtotal) * 10_000) / 100 : 0;
+  return { type, value: Math.min(value, 100) };
+}
+
 const TAX_MODE_HINT: Record<TaxMode, (label: string) => string> = {
   exclusive: (label) => `Prices exclude ${label}; it's added on top.`,
   inclusive: (label) => `Prices already include ${label}.`,
 };
 
-export function AdjustmentsSection() {
+/** Tax and discount, shown under the items' subtotal. */
+export function Adjustments() {
   const { document, totals, dispatch } = useDocument();
   const { tax, discount, currency } = document;
   const updateTax = (changes: Partial<DocumentTax>) => dispatch({ type: "updateTax", changes });
   const money = (amount: number) => formatMoney(amount, currency);
   const taxLabel = tax.label.trim() || "tax";
+  const fieldId = useFieldId();
 
   return (
-    <EditorSection title="Adjustments">
+    <div className="space-y-3 border-t border-border/60 pt-3">
       <div className="space-y-3">
         <ToggleRow
-          id="tax-enabled"
+          id={fieldId("tax-enabled")}
           title="Tax"
           summary={tax.enabled ? money(totals.taxTotal) : null}
           checked={tax.enabled}
@@ -98,17 +110,17 @@ export function AdjustmentsSection() {
         {tax.enabled && (
           <div className="animate-in space-y-3 duration-150 fade-in-0">
             <div className="grid grid-cols-[1fr_7rem] gap-3">
-              <Field label="Name" htmlFor="tax-label">
+              <Field label="Name" htmlFor={fieldId("tax-label")}>
                 <Input
-                  id="tax-label"
+                  id={fieldId("tax-label")}
                   value={tax.label}
                   onChange={(event) => updateTax({ label: event.target.value })}
                   placeholder="VAT"
                 />
               </Field>
-              <Field label="Rate" htmlFor="tax-rate">
+              <Field label="Rate" htmlFor={fieldId("tax-rate")}>
                 <DecimalInput
-                  id="tax-rate"
+                  id={fieldId("tax-rate")}
                   value={tax.rate}
                   onValueChange={(rate) => updateTax({ rate })}
                   max={100}
@@ -136,7 +148,7 @@ export function AdjustmentsSection() {
 
       <div className="space-y-3 border-t border-border/60 pt-3">
         <ToggleRow
-          id="discount-enabled"
+          id={fieldId("discount-enabled")}
           title="Discount"
           summary={discount ? `−${money(totals.discount)}` : null}
           checked={discount !== null}
@@ -155,9 +167,7 @@ export function AdjustmentsSection() {
               onChange={(type) =>
                 dispatch({
                   type: "update",
-                  changes: {
-                    discount: type === "percentage" ? { type, value: 0 } : { type, amount: 0 },
-                  },
+                  changes: { discount: convertDiscount(type, totals.discount, totals.subtotal) },
                 })
               }
               options={[
@@ -190,6 +200,10 @@ export function AdjustmentsSection() {
           </div>
         )}
       </div>
-    </EditorSection>
+      <div className="flex items-baseline justify-between border-t border-border/60 pt-3 text-[13px]">
+        <span className="font-medium">Total</span>
+        <span className="font-semibold tabular-nums">{money(totals.total)}</span>
+      </div>
+    </div>
   );
 }

@@ -3,7 +3,7 @@ import { useId, type ReactNode } from "react";
 import { mix } from "@/lib/color";
 import type { DocumentTheme, DocumentView, DocumentViewPayment } from "@/lib/documents";
 
-import { isSampleParty, LogoMark, PayLink, PaymentQr, SampleText } from "../kit";
+import { DefinitionRows, isSampleParty, ItemDescription, LogoMark, PayLink, PaymentQr, SampleText } from "../kit";
 import type { TemplateProps } from "../types";
 
 // Elegant: cinematic, premium, calm. Near-black full-bleed paper, a luminous
@@ -126,17 +126,6 @@ function Dates({ view, sample }: { view: DocumentView; sample: true | undefined 
   );
 }
 
-/** First description line reads as the item name; further lines as detail. */
-function Description({ text }: { text: string }) {
-  const [name, ...detail] = text.split("\n");
-  return (
-    <>
-      <p>{name}</p>
-      {detail.length > 0 && <p className="text-doc-ink-muted whitespace-pre-line">{detail.join("\n")}</p>}
-    </>
-  );
-}
-
 function Items({ view, sample }: { view: DocumentView; sample: true | undefined }) {
   const { labels } = view;
   const head = "border-doc-rule border-b pb-[2mm] font-medium";
@@ -154,7 +143,7 @@ function Items({ view, sample }: { view: DocumentView; sample: true | undefined 
         {view.items.map((item) => (
           <tr key={item.id} className="border-doc-rule border-b align-top" data-placeholder={sample}>
             <td className="py-[2.4mm] pr-[4mm]">
-              <Description text={item.description} />
+              <ItemDescription text={item.description} detailClassName="text-doc-ink-muted whitespace-pre-line" />
             </td>
             <td className="text-doc-ink-muted py-[2.4mm] text-right">{item.quantity}</td>
             <td className="text-doc-ink-muted py-[2.4mm] text-right">{item.unitPrice}</td>
@@ -170,12 +159,7 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
   return (
     <div className="document-keep-together mt-[5mm] ml-auto w-[80mm] tabular-nums" data-placeholder={sample}>
       <dl className="grid grid-cols-[1fr_auto] gap-y-[1.4mm] text-[8.5pt]">
-        {view.summary.map((row) => (
-          <div key={row.label} className="contents">
-            <dt className="text-doc-ink-muted">{row.label}</dt>
-            <dd className="text-right">{row.amount}</dd>
-          </div>
-        ))}
+        <DefinitionRows rows={view.summary} labelClassName="text-doc-ink-muted" valueClassName="text-right" />
       </dl>
       <div className="border-doc-ink-muted mt-[3mm] flex items-baseline justify-between border-t-[0.2mm] pt-[3mm]">
         <span className="text-[9pt] font-semibold tracking-[0.06em]">{view.total.label}</span>
@@ -184,12 +168,7 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
       {view.taxBreakdown && (
         <dl className="text-doc-ink-muted mt-[2.5mm] grid grid-cols-[1fr_auto] gap-y-[0.5mm] text-[7.5pt]">
           <dt className="col-span-2">{view.taxBreakdown.note}</dt>
-          {view.taxBreakdown.lines.map((row) => (
-            <div key={row.label} className="contents">
-              <dt>{row.label}</dt>
-              <dd className="text-right">{row.amount}</dd>
-            </div>
-          ))}
+          <DefinitionRows rows={view.taxBreakdown.lines} valueClassName="text-right" />
         </dl>
       )}
     </div>
@@ -205,12 +184,7 @@ function BankDetails({ payment }: { payment: DocumentViewPayment }) {
         <div className="mt-[2mm] text-[8.5pt]">
           <p className="font-semibold">{bank.title}</p>
           <dl className="mt-[0.8mm] grid grid-cols-[auto_1fr] gap-x-[4mm] gap-y-[0.4mm]">
-            {bank.fields.map((field) => (
-              <div key={field.label} className="contents">
-                <dt className="text-doc-ink-muted whitespace-nowrap">{field.label}</dt>
-                <dd className="tabular-nums">{field.value}</dd>
-              </div>
-            ))}
+            <DefinitionRows rows={bank.fields} labelClassName="text-doc-ink-muted whitespace-nowrap" valueClassName="tabular-nums" />
           </dl>
           {bank.instructions && (
             <p className="text-doc-ink-muted mt-[1.5mm] whitespace-pre-line">{bank.instructions}</p>

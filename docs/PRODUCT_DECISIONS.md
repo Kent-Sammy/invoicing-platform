@@ -122,7 +122,7 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
 
 **Status:** Decided by product owner · 2026-10-07
 
-- No PDF library. The document is real HTML/CSS designed for A4 print. "Download PDF" will, for now, invoke the browser's print / Save as PDF.
+- No PDF library. The document is real HTML/CSS designed for A4 print. "Save / Print PDF" invokes the browser's print / Save as PDF (decision 027).
 - Print CSS lives in `src/app/document.css`: `@page { size: A4; margin: 18mm }`, colour preservation, page-break helpers (`document-keep-together`, `document-page-break`), table headers repeat on every page, and table rows never split.
 - On screen, the sheet is 210mm wide with 18mm padding. In print, the padding is replaced by the `@page` margin, so content width is identical in preview and PDF.
 - **Rule:** anything wrapping the document must not constrain its width in print (use `print:w-auto` etc.), and app chrome must use `print:hidden`. This was found and fixed during verification: a `w-fit` wrapper made printed content half-width.
@@ -314,13 +314,56 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
   - sandbox template and brand toggles, and the `/dev/frame` check page.
 - **Not verified:** Safari and Firefox printing of the full-bleed frame. Firefox isn't installed and Safari can't print headlessly here. Chrome 155 is verified.
 
+## 027 — Readiness hardening, business profile and brand colour
+
+**Status:** Decided by product owner · 2026-10-07 (from the product readiness audit)
+
+- **Business profile (guest):** business identity, logo, bank transfer, payment link and QR settings persist between invoices in a store separate from the draft (`invoice-platform:business-profile`), shaped to become an account's business record later.
+  - "New invoice" keeps the profile and allocates the next number. It clears the client, items, discount, notes, terms and dates.
+  - The last invoice's currency, template, brand colour, tax settings and payment terms carry over as the new invoice's defaults.
+- **Brand colour control:** a swatch beside the template opens a small picker: template default (null), nine presets, a custom colour and a hex field. The template still decides where the colour goes, and it's saved with the draft.
+- **Printing:** a dedicated print root renders the document for print independently of the on-screen preview, so phones and tablets never print a blank page. The button reads "Save / Print PDF" because it opens the browser's print dialog.
+- **Print check:** printing requires a business name, a client name, at least one item with a description and an invoice number. A dialog lists what's missing and links to each field.
+- **Limits:** prices, fixed discounts and line totals are capped at 999,999,999,999.99, and quantities at 1,000,000. Any change that would push totals outside the exact range is refused, and payment links are capped at 500 characters. Error boundaries contain any remaining render failure.
+- **Storage:** all browser storage goes through one module. If storage is blocked, the app runs from memory and says "Not saved in this browser". If the quota is full, it shows "Not saved".
+- **Text safety:** long unbroken content wraps at the page layer (`overflow-wrap: anywhere` on `.document-page`). Numeric cells never break, and adjacent numeric columns keep a minimum gap.
+
+## 028 — Template → Create → Ready journey
+
+**Status:** Decided by product owner · 2026-10-07
+
+- **Three lightweight stages, not a wizard:** Template (choose a look), Create (editor + live preview), Ready (the invoice as hero, plus Save / Print PDF and Copy payment link). A stepper in the header shows where you are. Every stage can be revisited, and moving between stages never changes the document.
+- **Stage is UI state only,** kept in the URL (`/create?step=template|create|ready`) so Back/Forward and reload work. There's no new document state.
+- **Where you land:** a fresh invoice opens on Template (last template pre-selected); one in progress resumes on Create. "New invoice" returns to Template with the business profile kept.
+- **Primary action in Create:** "Review invoice →". It's disabled until the invoice has a business name, a client, an item with a description and a number, and it says what's left. There's no Save button anywhere because autosave covers it. Ready can't be reached or reloaded into without the minimum.
+- **Editor sections:** Your business, Client, Invoice, Items (tax and discount under the subtotal, then the total), Payment, Appearance, Notes & terms. **Appearance** holds Template and Brand colour, each with Change. The colour swatch no longer sits beside the template at the top.
+- **Fewer modals:** the "Start a new invoice?" confirmation appears only while the current invoice hasn't been printed or saved as a PDF. The pre-print "Almost ready" dialog from 027 is removed, because Ready is gated on the same rules.
+
+## 029 — Landing page: "the page is paper"
+
+**Status:** Decided by product owner · 2026-10-07 (references in `docs/Landing_ref/`)
+
+- `/` is the landing page and `/create` is the builder, unchanged. Every CTA goes to `/create`.
+- **Art direction:** monochrome chrome (ink `#0b0b0c`, paper `#fafaf8`, neutral greys). Colour comes only from the real templates. Newsreader is the display face, Geist the UI and body, Geist Mono the tracked eyebrows. One atmosphere, a soft grayscale mist and light band (`landing.css`), echoed at night in the dark final CTA.
+- **Sections:** Hero, Live Preview, Templates, How It Works, The Details That Matter, FAQ, Final CTA, Footer. (A separate No Account section was removed on 2026-10-08: the hero's "No sign-up" and two FAQ answers already carry it.) There's no pricing, testimonials, logo wall or statistics until they're real.
+- **Real product only:** the hero is the real Create stage (header, editor, live preview, footer) playing a short scripted run once, then resting. It's inert and decorative, and reduced motion shows the finished state. The Live Preview is interactive (the real Client and Items sections). Templates uses the real renderer. All demos run in an in-memory `DocumentProvider`, so they never touch the visitor's draft or profile. Editor field ids can be prefixed (`FieldIdScope`) so two editors can share a page.
+
+## 030 — Name and logo: Nuhmera
+
+**Status:** Decided by product owner · 2026-10-08
+
+- The product is **Nuhmera**, replacing the temporary internal name "Invoice Platform". `siteConfig.name` is the single source, so it covers page titles, the copyright line and accessible labels.
+- **Logo:** `docs/LOGOS/number Logo.svg` (a receipt mark plus the "Nuhmera" wordmark), as `components/brand/nuhmera-logo.tsx`. It's drawn in `currentColor` so it takes ink on paper and white on dark.
+  - Used in the builder header (linking to `/`), the landing nav, the footer brand column and the oversized faint footer wordmark.
+  - The mark alone, on a white rounded tile, is the favicon (`app/icon.svg`); the default `favicon.ico` was removed.
+- The hero eyebrow "INVOICE PLATFORM" is kept as a category label.
+
 ---
 
 ## Open decisions
 
 - **Gaps in guest numbering:** numbers are allocated when a document is created, so resetting a draft you never sent skips a number. Alternative: allocate on first print/download, which needs an "issued" state. Acceptable for v1?
 - **Following a custom number scheme:** if a user renames `INV-0003` to `KDS-2026-001`, should the next invoice continue as `KDS-2026-002`? Currently the guest counter continues as `INV-0004`.
-- **Carrying details to the next invoice:** reset currently clears everything, including business details, payment details and the logo. For repeat guest use, should a new invoice keep the business, payment details and logo?
 - **More countries:** NG, GB and US are configured. Which others at launch?
-- **Brand colour contrast:** the "Pay invoice" button uses the brand colour with white text. When brand-colour picking ships, very light colours will need a contrast fallback.
+- **Terms on the next invoice:** terms are cleared with each new invoice. Should they carry over like the business details, since they're usually standard wording?
 - **Rounding mode:** half away from zero. Confirm this matches what Nigerian accountants expect (vs. banker's rounding).

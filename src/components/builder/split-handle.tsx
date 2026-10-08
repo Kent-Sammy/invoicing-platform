@@ -2,6 +2,7 @@
 
 import { useRef, useState, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
 
+import { getBrowserStorage } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "invoice-platform:ui:editor-split";
@@ -14,7 +15,7 @@ const KEYBOARD_STEP = 0.02;
 /** The saved editor share of the workspace width (0–1), or the default. */
 export function readSplit(): number {
   try {
-    const saved = Number(window.localStorage.getItem(STORAGE_KEY));
+    const saved = Number(getBrowserStorage().getItem(STORAGE_KEY));
     return saved > 0.1 && saved < 0.9 ? saved : DEFAULT_SPLIT;
   } catch {
     return DEFAULT_SPLIT;
@@ -23,9 +24,9 @@ export function readSplit(): number {
 
 function saveSplit(split: number) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, split.toFixed(4));
+    getBrowserStorage().setItem(STORAGE_KEY, split.toFixed(4));
   } catch {
-    // Storage unavailable (private mode): the split just isn't remembered.
+    // Storage full: the split just isn't remembered.
   }
 }
 

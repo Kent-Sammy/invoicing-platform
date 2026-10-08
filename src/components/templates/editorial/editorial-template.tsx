@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 
 import type { DocumentView, DocumentViewPayment } from "@/lib/documents";
 
-import { isSampleParty, LogoMark, PayLink, PaymentQr, SampleText } from "../kit";
+import { DefinitionRows, isSampleParty, ItemDescription, LogoMark, PayLink, PaymentQr, SampleText } from "../kit";
 import type { TemplateProps } from "../types";
 
 // Editorial: Swiss, type-led, art-directed. The page is an acid-lime colour
@@ -102,21 +102,6 @@ function ClientDetails({ view }: { view: DocumentView }) {
   );
 }
 
-/** Bold item name; any further description lines indented as detail. */
-function Description({ text }: { text: string }) {
-  const [name, ...detail] = text.split("\n");
-  return (
-    <>
-      <p className="font-bold">{name}</p>
-      {detail.length > 0 && (
-        <p className="font-doc-serif text-doc-ink-muted pl-[6mm] text-[9pt] whitespace-pre-line">
-          {detail.join("\n")}
-        </p>
-      )}
-    </>
-  );
-}
-
 function Items({ view, sample }: { view: DocumentView; sample: true | undefined }) {
   const { labels } = view;
   return (
@@ -133,7 +118,7 @@ function Items({ view, sample }: { view: DocumentView; sample: true | undefined 
         {view.items.map((item) => (
           <tr key={item.id} className="align-top" data-placeholder={sample}>
             <td className="py-[1.8mm] pr-[4mm]">
-              <Description text={item.description} />
+              <ItemDescription text={item.description} nameClassName="font-bold" detailClassName="font-doc-serif text-doc-ink-muted pl-[6mm] text-[9pt] whitespace-pre-line" />
             </td>
             <td className="py-[1.8mm] text-right font-semibold">{item.quantity}</td>
             <td className="py-[1.8mm] text-right font-semibold">{item.unitPrice}</td>
@@ -149,12 +134,7 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
   return (
     <div className="document-keep-together mt-[14mm] ml-auto w-[86mm] tabular-nums" data-placeholder={sample}>
       <dl className="grid grid-cols-[1fr_auto] gap-y-[0.6mm] text-[9pt] font-bold uppercase">
-        {view.summary.map((row) => (
-          <div key={row.label} className="contents">
-            <dt>{row.label}</dt>
-            <dd className="text-right">{row.amount}</dd>
-          </div>
-        ))}
+        <DefinitionRows rows={view.summary} valueClassName="text-right" />
       </dl>
       <div className="border-doc-brand-text mt-[3mm] flex items-baseline justify-between border-t-[0.5mm] pt-[2mm]">
         <span className="text-doc-brand-text text-[10pt] font-extrabold uppercase">{view.total.label}</span>
@@ -165,12 +145,7 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
       {view.taxBreakdown && (
         <dl className="text-doc-ink-muted mt-[2mm] grid grid-cols-[1fr_auto] text-[8pt] font-semibold">
           <dt className="col-span-2">{view.taxBreakdown.note}</dt>
-          {view.taxBreakdown.lines.map((row) => (
-            <div key={row.label} className="contents">
-              <dt>{row.label}</dt>
-              <dd className="text-right">{row.amount}</dd>
-            </div>
-          ))}
+          <DefinitionRows rows={view.taxBreakdown.lines} valueClassName="text-right" />
         </dl>
       )}
     </div>

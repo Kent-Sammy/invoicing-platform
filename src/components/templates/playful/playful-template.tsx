@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import type { DocumentView, DocumentViewPayment } from "@/lib/documents";
 
-import { isSampleParty, LogoMark, PayLink, PaymentQr, SampleText } from "../kit";
+import { DefinitionRows, isSampleParty, ItemDescription, LogoMark, PayLink, PaymentQr, SampleText } from "../kit";
 import type { TemplateProps } from "../types";
 import { Bullet, CornerCluster, SunRise } from "./artwork";
 
@@ -75,17 +75,6 @@ function Party({ view, party }: { view: DocumentView; party: "business" | "clien
   );
 }
 
-/** First description line reads as the item name; further lines as detail. */
-function Description({ text }: { text: string }) {
-  const [name, ...detail] = text.split("\n");
-  return (
-    <>
-      <p className="font-semibold">{name}</p>
-      {detail.length > 0 && <p className="text-doc-ink-muted whitespace-pre-line">{detail.join("\n")}</p>}
-    </>
-  );
-}
-
 function Items({ view, sample }: { view: DocumentView; sample: true | undefined }) {
   const { labels } = view;
   return (
@@ -113,7 +102,7 @@ function Items({ view, sample }: { view: DocumentView; sample: true | undefined 
                 </span>
               </td>
               <td className="py-[2.2mm] pr-[4mm]">
-                <Description text={item.description} />
+                <ItemDescription text={item.description} nameClassName="font-semibold" detailClassName="text-doc-ink-muted whitespace-pre-line" />
               </td>
               <td className="py-[2.2mm] text-right">{item.quantity}</td>
               <td className="py-[2.2mm] text-right">{item.unitPrice}</td>
@@ -130,12 +119,7 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
   return (
     <div className="document-keep-together tabular-nums" data-placeholder={sample}>
       <dl className="grid grid-cols-[1fr_auto] gap-y-[1.4mm] px-[5mm]">
-        {view.summary.map((row) => (
-          <div key={row.label} className="contents">
-            <dt className="text-doc-ink-muted">{row.label}</dt>
-            <dd className="text-right font-semibold">{row.amount}</dd>
-          </div>
-        ))}
+        <DefinitionRows rows={view.summary} labelClassName="text-doc-ink-muted" valueClassName="text-right font-semibold" />
       </dl>
       <div className="bg-doc-brand text-doc-on-brand mt-[3mm] flex items-center justify-between rounded-full px-[5mm] py-[3mm]">
         <span className="text-[10pt] font-bold">{view.total.label}</span>
@@ -144,12 +128,7 @@ function Totals({ view, sample }: { view: DocumentView; sample: true | undefined
       {view.taxBreakdown && (
         <dl className="text-doc-ink-muted mt-[2.5mm] grid grid-cols-[1fr_auto] gap-y-[0.6mm] px-[5mm] text-[8pt]">
           <dt className="col-span-2">{view.taxBreakdown.note}</dt>
-          {view.taxBreakdown.lines.map((row) => (
-            <div key={row.label} className="contents">
-              <dt>{row.label}</dt>
-              <dd className="text-right">{row.amount}</dd>
-            </div>
-          ))}
+          <DefinitionRows rows={view.taxBreakdown.lines} valueClassName="text-right" />
         </dl>
       )}
     </div>
@@ -165,12 +144,7 @@ function BankTransfer({ payment }: { payment: DocumentViewPayment }) {
       <div className="rounded-[3.5mm] bg-[#e3f7f2] px-[5mm] py-[3.5mm]">
         <p className="mb-[1.2mm] font-bold">{bank.title}</p>
         <dl className="grid grid-cols-[auto_1fr] gap-x-[5mm] gap-y-[0.6mm]">
-          {bank.fields.map((field) => (
-            <div key={field.label} className="contents">
-              <dt className="text-doc-ink-muted">{field.label}</dt>
-              <dd className="font-semibold tabular-nums">{field.value}</dd>
-            </div>
-          ))}
+          <DefinitionRows rows={bank.fields} labelClassName="text-doc-ink-muted" valueClassName="font-semibold tabular-nums" />
         </dl>
         {bank.instructions && (
           <p className="text-doc-ink-muted mt-[1.5mm] whitespace-pre-line">{bank.instructions}</p>

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { normalizePaymentUrl } from "@/lib/payments";
+import { MAX_PAYMENT_URL_LENGTH, normalizePaymentUrl } from "@/lib/payments";
 import type { BankTransferOption, PaymentLinkOption } from "@/types/document";
 
 import { Field, FieldRow, OptionalSection } from "./editor-section";
@@ -55,6 +55,7 @@ export function PaymentSection() {
     dispatch({ type: "updatePaymentLink", changes });
 
   const linkInvalid = paymentLink.url.trim() !== "" && normalizePaymentUrl(paymentLink.url) === null;
+  const linkTooLong = paymentLink.url.trim().length > MAX_PAYMENT_URL_LENGTH;
   const display: LinkDisplay =
     paymentLink.showButton && qrCode.enabled ? "both" : qrCode.enabled ? "qr" : "button";
 
@@ -65,7 +66,7 @@ export function PaymentSection() {
 
   return (
     <OptionalSection
-      title="Payment options"
+      title="Payment"
       description="Bank transfer, a payment link or a QR code."
       hasContent={bankTransfer.enabled || paymentLink.enabled}
     >
@@ -128,7 +129,11 @@ export function PaymentSection() {
           htmlFor="payment-url"
           hint={
             linkInvalid ? (
-              <span className="text-destructive">Enter a full web link, e.g. https://…</span>
+              <span className="text-destructive">
+                {linkTooLong
+                  ? `That link is too long — use one under ${MAX_PAYMENT_URL_LENGTH} characters.`
+                  : "Enter a full web link, e.g. https://…"}
+              </span>
             ) : (
               "Paystack, Flutterwave, Stripe or any payment page."
             )

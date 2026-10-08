@@ -1,2 +1,2 @@
 export { createQrCode, type QrCode } from "./qr";
-export { displayPaymentUrl, normalizePaymentUrl } from "./url";
+export { displayPaymentUrl, MAX_PAYMENT_URL_LENGTH, normalizePaymentUrl } from "./url";

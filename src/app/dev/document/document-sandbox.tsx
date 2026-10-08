@@ -9,7 +9,7 @@ import { DocumentRenderer } from "@/components/preview/document-renderer";
 import { TEMPLATES } from "@/components/templates/registry";
 import { Button } from "@/components/ui/button";
 import { LOGO_LIMITS } from "@/config/assets";
-import { createSampleDocument } from "@/data/sample-document";
+import { createSampleDocument, createStressDocument } from "@/data/sample-document";
 import { processLogo } from "@/lib/assets";
 import { guestStorage } from "@/lib/guest";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ import type { TemplateId } from "@/types/template";
 const TEMPLATE_IDS = Object.keys(TEMPLATES) as TemplateId[];
 
 export function DocumentSandbox() {
-  // ?long / ?inclusive / ?template=<id> / ?brand=none|%23rrggbb open those variants
+  // ?long / ?inclusive / ?stress / ?template=<id> / ?brand=none|%23rrggbb open those variants
   // directly (useful for headless print checks).
   const searchParams = useSearchParams();
   const [templateId, setTemplateId] = useState<TemplateId>(() => {
@@ -35,7 +35,8 @@ export function DocumentSandbox() {
   const [logoStatus, setLogoStatus] = useState("");
   const asset = useAsset(logo, guestStorage.assets);
 
-  const sample = createSampleDocument({
+  const stress = searchParams.has("stress");
+  const sample = (stress ? createStressDocument : createSampleDocument)({
     repeat: long ? 12 : 1,
     taxMode: inclusive ? "inclusive" : "exclusive",
   });

@@ -12,7 +12,7 @@ export function NotesSection() {
 
   return (
     <OptionalSection
-      title="Notes"
+      title="Notes & terms"
       description="A thank-you note or payment terms."
       hasContent={document.notes !== "" || document.terms !== ""}
     >

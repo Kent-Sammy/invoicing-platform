@@ -38,6 +38,26 @@
   position: relative;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
+  /* Text safety for every template: long unbroken content (emails, URLs,
+     reference codes) may break anywhere. "anywhere" (unlike "break-word")
+     also lowers each element's min-content width, so grid, flex and table
+     columns shrink to fit the page instead of pushing content past it. */
+  overflow-wrap: anywhere;
+}
+
+/* Numeric cells (quantities, prices, amounts, dates) never break mid-value:
+   their column widens and the description column gives way instead. */
+.document-page :is(td, th, dd).text-right {
+  overflow-wrap: normal;
+}
+
+/* A minimum gap between adjacent numeric columns, so even the largest
+   amounts never run together. In the base layer: any padding a template
+   sets on its cells wins, and at normal widths nothing moves. */
+@layer base {
+  .document-page :is(td, th).text-right {
+    padding-left: 2.5mm;
+  }
 }
 
 /* Keep a block on one page (totals, notes, signatures). */

@@ -1,3 +1,4 @@
+import { getBrowserStorage } from "@/lib/storage";
 import type { Asset } from "@/types/asset";
 
 import type { AssetStore } from "./asset-store";
@@ -21,7 +22,7 @@ function isAsset(value: unknown): value is Asset {
  */
 export function createLocalStorageAssetStore(
   prefix: string = GUEST_ASSET_PREFIX,
-  getStorage: () => Storage = () => window.localStorage,
+  getStorage: () => Storage = getBrowserStorage,
   createId: () => string = () => crypto.randomUUID(),
 ): AssetStore {
   return {

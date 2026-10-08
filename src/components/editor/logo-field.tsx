@@ -101,9 +101,11 @@ export function LogoField({ onError }: { onError: (message: string | null) => vo
           type="button"
           onClick={remove}
           aria-label="Remove logo"
-          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full border bg-background text-muted-foreground opacity-0 shadow-xs transition-opacity outline-none group-hover/logo:opacity-100 hover:text-foreground focus-visible:opacity-100"
+          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full border bg-background text-muted-foreground opacity-0 shadow-xs transition-opacity outline-none group-hover/logo:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:-top-2 pointer-coarse:-right-2 pointer-coarse:size-5 pointer-coarse:opacity-100"
         >
           <X className="size-2.5" />
+          {/* Touch: a finger-sized hit area around the small visible button. */}
+          <span aria-hidden className="absolute -inset-2.5 hidden pointer-coarse:block" />
         </button>
       )}
       <input

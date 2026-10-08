@@ -6,6 +6,7 @@ export {
   calculateSubtotal,
   calculateTax,
   calculateTotals,
+  isCalculable,
   type DocumentTotals,
   type TaxLine,
 } from "./totals";

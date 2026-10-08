@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./document.css";
+@import "./landing.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -19,6 +20,22 @@
   /* Document font families (decision 025): font-doc-sans, font-doc-serif. */
   --font-doc-sans: var(--font-bricolage), sans-serif;
   --font-doc-serif: var(--font-newsreader), serif;
+
+  /* Landing page (marketing) tokens: monochrome chrome; colour comes only
+     from the product's templates. Onest is the marketing typeface. */
+  --color-ink: #0b0b0c;
+  --color-paper: #fafaf8;
+  --font-display: var(--font-onest), sans-serif;
+  /* Theme-aware landing tokens (values in landing.css): bg-page, text-page-fg… */
+  --color-page: var(--page);
+  --color-page-fg: var(--page-fg);
+  --color-page-muted: var(--page-muted);
+  --color-page-faint: var(--page-faint);
+  --color-page-dim: var(--page-dim);
+  --color-page-line: var(--page-line);
+  --color-page-line-soft: var(--page-line-soft);
+  --color-page-line-strong: var(--page-line-strong);
+  --color-page-canvas: var(--page-canvas);
 
   /* App (UI chrome) tokens — themed for light and dark. */
   --color-canvas: var(--canvas);

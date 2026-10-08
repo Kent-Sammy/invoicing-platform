@@ -5,12 +5,14 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { useDocument } from "@/components/document/document-provider";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { CurrencyCode } from "@/config/currencies";
+import { MAX_QUANTITY, maxAmount } from "@/config/limits";
 import { createItem } from "@/lib/documents";
 import { formatMoney, type MinorUnits } from "@/lib/money";
 import type { DocumentItem } from "@/types/document";
 
+import { Adjustments } from "./adjustments-section";
 import { DecimalInput } from "./inputs/decimal-input";
 import { MoneyInput } from "./inputs/money-input";
 import { EditorSection } from "./editor-section";
@@ -27,8 +29,24 @@ interface ItemRowProps {
 }
 
 function ItemRow({ item, index, amount, currency, autoFocus, onChange, onRemove, onEnter }: ItemRowProps) {
-  const descriptionRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const label = `Item ${index + 1}`;
+  const errorId = `item-${item.id}-error`;
+
+  // Each line total must stay within the maximum amount, so the price and
+  // quantity limits depend on each other.
+  const lineMax = maxAmount(currency);
+  const priceMax = item.quantity > 0 ? Math.floor(lineMax / item.quantity) : lineMax;
+  const quantityMax = item.unitPrice > 0 ? Math.min(MAX_QUANTITY, lineMax / item.unitPrice) : MAX_QUANTITY;
+  const [quantityTooLarge, setQuantityTooLarge] = useState(false);
+  const [priceTooLarge, setPriceTooLarge] = useState(false);
+  const error = quantityTooLarge
+    ? item.unitPrice > 0 && quantityMax < MAX_QUANTITY
+      ? `Line amount can be at most ${formatMoney(lineMax, currency)}.`
+      : `Quantity can be at most ${MAX_QUANTITY.toLocaleString("en")}.`
+    : priceTooLarge
+      ? `Line amount can be at most ${formatMoney(lineMax, currency)}.`
+      : null;
 
   useEffect(() => {
     if (autoFocus) descriptionRef.current?.focus();
@@ -41,17 +59,29 @@ function ItemRow({ item, index, amount, currency, autoFocus, onChange, onRemove,
     }
   };
 
+  // The first line is the item name; further lines print as detail beneath
+  // it. Shift + Enter starts a detail line, Enter adds the next item — except
+  // on touch keyboards, where Enter is the only way to start a new line.
+  const descriptionKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+    submitOnEnter(event);
+  };
+
   return (
     <li className="group animate-in border-b border-border/60 py-3.5 duration-150 fade-in-0 first:pt-0">
-      <div className="flex items-center gap-1.5">
-        <Input
+      <div className="flex items-start gap-1.5">
+        <Textarea
           ref={descriptionRef}
+          rows={1}
           value={item.description}
           onChange={(event) => onChange({ description: event.target.value })}
-          onKeyDown={submitOnEnter}
+          onKeyDown={descriptionKeyDown}
           placeholder="What did you provide?"
           aria-label={`${label} description`}
-          className="font-medium placeholder:font-normal"
+          aria-description="Shift + Enter adds a detail line below the item name."
+          title="Shift + Enter adds a detail line"
+          className="min-h-8 resize-none py-[5px] font-medium placeholder:font-normal"
         />
         <Button
           variant="ghost"
@@ -67,6 +97,9 @@ function ItemRow({ item, index, amount, currency, autoFocus, onChange, onRemove,
         <DecimalInput
           value={item.quantity}
           onValueChange={(quantity) => onChange({ quantity })}
+          max={quantityMax}
+          onExceedsMax={setQuantityTooLarge}
+          aria-describedby={error ? errorId : undefined}
           onKeyDown={submitOnEnter}
           placeholder="0"
           aria-label={`${label} quantity`}
@@ -79,6 +112,9 @@ function ItemRow({ item, index, amount, currency, autoFocus, onChange, onRemove,
           <MoneyInput
             value={item.unitPrice}
             onValueChange={(unitPrice) => onChange({ unitPrice })}
+            max={priceMax}
+            onExceedsMax={setPriceTooLarge}
+            aria-describedby={error ? errorId : undefined}
             onKeyDown={submitOnEnter}
             currency={currency}
             placeholder="0.00"
@@ -92,6 +128,11 @@ function ItemRow({ item, index, amount, currency, autoFocus, onChange, onRemove,
           {formatMoney(amount, currency)}
         </output>
       </div>
+      {error && (
+        <p id={errorId} role="alert" className="mt-1.5 text-[11.5px] text-destructive">
+          {error}
+        </p>
+      )}
     </li>
   );
 }
@@ -146,6 +187,7 @@ export function ItemsSection() {
         <span className="text-muted-foreground">Subtotal</span>
         <span className="font-medium tabular-nums">{formatMoney(totals.subtotal, document.currency)}</span>
       </div>
+      <Adjustments />
     </EditorSection>
   );
 }

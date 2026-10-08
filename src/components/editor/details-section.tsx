@@ -33,7 +33,7 @@ export function DetailsSection() {
     dispatch({ type: "update", changes });
 
   return (
-    <EditorSection title="Invoice details">
+    <EditorSection title="Invoice">
       <FieldRow>
         <Field label="Invoice number" htmlFor="document-number">
           <Input

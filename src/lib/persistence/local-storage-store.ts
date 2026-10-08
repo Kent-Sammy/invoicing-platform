@@ -1,4 +1,6 @@
+import { isCalculable } from "@/lib/calculations";
 import { isBusinessDocument } from "@/lib/documents";
+import { getBrowserStorage } from "@/lib/storage";
 import type { BusinessDocument } from "@/types/document";
 
 import type { DocumentStore } from "./document-store";
@@ -18,7 +20,7 @@ interface StoredDraft {
  */
 export function createLocalStorageDocumentStore(
   key: string = GUEST_DRAFT_KEY,
-  getStorage: () => Storage = () => window.localStorage,
+  getStorage: () => Storage = getBrowserStorage,
 ): DocumentStore {
   return {
     async load() {
@@ -35,7 +37,7 @@ export function createLocalStorageDocumentStore(
         ) {
           // Older drafts are upgraded; anything unrecognisable is ignored.
           const document = migrateDocument(stored.version, stored.document);
-          if (isBusinessDocument(document)) return document;
+          if (isBusinessDocument(document) && isCalculable(document)) return document;
         }
       } catch {
         // Corrupt JSON: fall through and treat as no draft.

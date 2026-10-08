@@ -95,6 +95,8 @@ Templates are split into four layers. Only the top layer differs between templat
 
 ### 2.3 Document kit (shared behaviour, styleable look)
 
+_Update (decision 027):_ the kit now also has `DefinitionRows` (label/value rows for summaries, tax lines and bank fields) and `ItemDescription` (item name plus detail lines). Text safety lives in the page frame (`document.css`), not in templates. Every template is checked in Playwright for A4 overflow, unbroken amounts, edge-to-edge paper and a scannable QR code.
+
 `components/templates/kit/` would hold the building blocks every template composes. Each kit component fixes behaviour and exposes styling through `className` slots, props for supported variants, and theme tokens:
 
 | Kit component | Fixed behaviour | Template can vary |

@@ -1,4 +1,5 @@
 import { getDocumentType } from "@/lib/documents/definitions";
+import { getBrowserStorage } from "@/lib/storage";
 import type { DocumentType } from "@/types/document";
 
 import { formatDocumentNumber } from "./format";
@@ -23,7 +24,7 @@ function readCounters(storage: Storage, key: string): Counters {
  */
 export function createLocalStorageNumberSequence(
   key: string = GUEST_SEQUENCE_KEY,
-  getStorage: () => Storage = () => window.localStorage,
+  getStorage: () => Storage = getBrowserStorage,
 ): DocumentNumberSequence {
   return {
     async next(type) {

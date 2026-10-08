@@ -5,26 +5,27 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Client } from "@/types/document";
 
-import { Disclosures, EditorSection, Field } from "./editor-section";
+import { Disclosures, EditorSection, Field, useFieldId } from "./editor-section";
 
 export function ClientSection() {
   const { document, dispatch } = useDocument();
   const client = document.client;
   const update = (changes: Partial<Client>) => dispatch({ type: "updateClient", changes });
+  const fieldId = useFieldId();
 
   return (
     <EditorSection title="Client">
-      <Field label="Client or company name" htmlFor="client-name">
+      <Field label="Client or company name" htmlFor={fieldId("client-name")}>
         <Input
-          id="client-name"
+          id={fieldId("client-name")}
           value={client.name}
           onChange={(event) => update({ name: event.target.value })}
           placeholder="Who is this invoice for?"
         />
       </Field>
-      <Field label="Email" htmlFor="client-email">
+      <Field label="Email" htmlFor={fieldId("client-email")}>
         <Input
-          id="client-email"
+          id={fieldId("client-email")}
           type="email"
           value={client.email}
           onChange={(event) => update({ email: event.target.value })}
@@ -39,9 +40,9 @@ export function ClientSection() {
             defaultOpen: client.address !== "" || client.phone !== "",
             content: (
               <>
-                <Field label="Address" htmlFor="client-address">
+                <Field label="Address" htmlFor={fieldId("client-address")}>
                   <Textarea
-                    id="client-address"
+                    id={fieldId("client-address")}
                     value={client.address}
                     onChange={(event) => update({ address: event.target.value })}
                     placeholder={"Street\nCity"}
@@ -49,9 +50,9 @@ export function ClientSection() {
                     className="min-h-0 resize-none"
                   />
                 </Field>
-                <Field label="Phone" htmlFor="client-phone">
+                <Field label="Phone" htmlFor={fieldId("client-phone")}>
                   <Input
-                    id="client-phone"
+                    id={fieldId("client-phone")}
                     type="tel"
                     value={client.phone}
                     onChange={(event) => update({ phone: event.target.value })}
@@ -65,9 +66,9 @@ export function ClientSection() {
             label: "Add tax information",
             defaultOpen: client.taxId !== "",
             content: (
-              <Field label="Client tax ID" htmlFor="client-tax-id">
+              <Field label="Client tax ID" htmlFor={fieldId("client-tax-id")}>
                 <Input
-                  id="client-tax-id"
+                  id={fieldId("client-tax-id")}
                   value={client.taxId}
                   onChange={(event) => update({ taxId: event.target.value })}
                 />

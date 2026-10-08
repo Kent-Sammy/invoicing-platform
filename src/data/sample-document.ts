@@ -65,3 +65,59 @@ export function createSampleDocument({
     branding: { templateId: "minimal", brandColor: "#4f46e5", logo: null },
   };
 }
+
+/**
+ * Worst-case but realistic content: long names, long unbroken emails and
+ * URLs, an unbroken word, multi-line items and the largest allowed amounts.
+ * Every template must keep all of it inside the A4 page.
+ */
+export function createStressDocument(options: SampleOptions = {}): BusinessDocument {
+  const sample = createSampleDocument(options);
+  return {
+    ...sample,
+    number: "INV-2026-000123-LAGOS-HQ-PROCUREMENT",
+    business: {
+      ...sample.business,
+      name: "Adebayo Okonkwo-Fashola Creative Design & Brand Strategy Studio Limited",
+      email: "accounts.receivable.department@adebayookonkwofasholacreativestudio.com.ng",
+      address: "Plot 1234, Admiralty Way, Lekki Phase 1, Eti-Osa Local Government Area\nLagos",
+      taxId: "TIN 12345678-0001 / RC 1234567 / VAT-NG-0000000001",
+    },
+    client: {
+      ...sample.client,
+      name: "Federal Ministry of Information and National Orientation Procurement Unit",
+      email: "procurement.unit.headquarters.abuja@ministryofinformationandculture.gov.ng",
+      phone: "+234 809 000 0000",
+      address: "Radio House, Herbert Macaulay Way, Area 10, Garki\nAbuja FCT",
+    },
+    items: [
+      {
+        id: "stress-0",
+        description:
+          "Comprehensive brand identity system\nPrimary and secondary logos, colour palette, typography, iconography and a 60-page brand book",
+        quantity: 1,
+        unitPrice: 99_999_999_999_999,
+      },
+      {
+        id: "stress-1",
+        description: "Supercalifragilisticexpialidociousunbrokenreferencecodethatgoesonwithoutanyspaces",
+        quantity: 999_999.5,
+        unitPrice: 9_999,
+      },
+      ...sample.items.slice(0, 2),
+    ],
+    notes: "Reference: https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789",
+    paymentOptions: {
+      ...sample.paymentOptions,
+      bankTransfer: {
+        ...sample.paymentOptions.bankTransfer,
+        bankName: "Guaranty Trust Bank Plc (GTCO)",
+        accountName: "Adebayo Okonkwo-Fashola Creative Design Studio Limited",
+      },
+      paymentLink: {
+        ...sample.paymentOptions.paymentLink,
+        url: "https://paystack.com/pay/adebayo-okonkwo-fashola-creative-design-studio-invoice-2026-000123",
+      },
+    },
+  };
+}

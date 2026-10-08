@@ -14,6 +14,7 @@ export { dueDateFor } from "./payment-terms";
 export { withPlaceholders, type PlaceholderField } from "./placeholders";
 export { createDocumentTheme, type DocumentSurface, type DocumentTheme } from "./theme";
 export { documentReducer, type DocumentAction } from "./reducer";
+export { describeMissing, hasInvoiceContent, missingRequirements, type MissingRequirement } from "./readiness";
 export { isBusinessDocument } from "./validate";
 export {
   createDocumentView,

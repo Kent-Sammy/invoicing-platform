@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono, Newsreader } from "next/font/google";
 
+import { THEME_SCRIPT } from "@/components/theme/theme";
 import { siteConfig } from "@/config/site";
 
 import "./globals.css";
@@ -42,7 +43,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${newsreader.variable} h-full antialiased`}
+      // The theme script sets the class before React hydrates.
+      suppressHydrationWarning
     >
+      <head>
+        {/* Static, first-party theme bootstrap (see components/theme/theme.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
