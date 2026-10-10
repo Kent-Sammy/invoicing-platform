@@ -162,4 +162,35 @@
   .document-page tr {
     break-inside: avoid;
   }
+
+  /*
+   * Flow print mode (iOS/iPadOS — see lib/print-environment.ts). The same
+   * invoice, made tolerant of a print path that adds its own margins and
+   * shrinks the page to fit, so nothing re-flows or spills:
+   * - the sheet keeps its designed 210mm width and is scaled as one piece
+   *   (zoom 0.85) to sit inside the device's printable area — A4 or US
+   *   Letter with up to half-inch margins — so nothing re-flows and
+   *   artwork keeps its exact place relative to the content;
+   * - page one isn't forced to the full A4 height (which only fits with
+   *   zero printer margins): the footer follows the content, so a
+   *   one-page invoice stays one page and long ones paginate normally;
+   * - artwork meant for every page is anchored to the sheet, because this
+   *   print path draws fixed elements once, against the screen.
+   * Backgrounds are kept wherever the device prints them.
+   */
+  html[data-print-flow] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html[data-print-flow] .document-page {
+    --doc-content-height: auto;
+    width: 210mm;
+    zoom: 0.85;
+    margin-inline: auto;
+  }
+
+  html[data-print-flow] .document-every-page-art {
+    position: absolute;
+  }
 }

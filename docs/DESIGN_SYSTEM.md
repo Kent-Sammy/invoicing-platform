@@ -98,6 +98,12 @@ Rules:
 - **The print source is separate from the preview:** `PrintDocumentRoot` renders the same document, hidden on screen and shown only in print. The scaled or hidden preview never prints, so printing works whether or not the preview was ever opened (decision 027).
 - App chrome must carry `print:hidden`. Wrappers around the document must not constrain its width in print.
 - **Text safety (page layer):** `.document-page` sets `overflow-wrap: anywhere`, so long emails, URLs and codes wrap inside their column. Right-aligned `td`/`th`/`dd` cells (numbers) never break, and adjacent numeric columns keep a 2.5mm minimum gap. Templates don't need their own overflow handling.
+- **iOS / iPadOS print ("flow" mode, 2026-10-10):** iOS WebKit ignores `@page { margin: 0 }` (AirPrint adds its own margins), lays pages out wider than the paper and shrinks them to fit, doesn't clone padding across page breaks, and prints `position: fixed` only on page one. A `<head>` script (`lib/print-environment.ts`) marks iOS/iPadOS by feature (`-webkit-touch-callout`), and in print that mode:
+  - keeps the sheet at 210mm and scales it as one piece (zoom 0.85), so the design never re-flows and fits A4 or US Letter with up to half-inch margins;
+  - drops the forced full-page height, so the footer follows the content;
+  - anchors every-page artwork to the sheet.
+
+  Desktop Chrome, Safari and Firefox keep the edge-to-edge frame. Covered by `e2e/print-ios.spec.ts`, which reproduces iOS conditions in Chromium's print pipeline.
 - **Before printing:** "Save / Print PDF" lives in the Ready stage, which is reachable only once the invoice has a business name, a client, an item with a description and an invoice number (decision 028).
 - Helpers: `document-keep-together` keeps a block on one page; `document-page-break` starts a new page.
 - Table headers repeat on each printed page, and rows never split across pages. Totals, payment details and notes each stay on one page.

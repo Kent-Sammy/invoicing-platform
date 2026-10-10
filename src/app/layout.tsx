@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono, Newsreader } from "next/font/google";
 
 import { THEME_SCRIPT } from "@/components/theme/theme";
+import { PRINT_ENVIRONMENT_SCRIPT } from "@/lib/print-environment";
 import { siteConfig } from "@/config/site";
 
 import "./globals.css";
@@ -49,6 +50,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         {/* Static, first-party theme bootstrap (see components/theme/theme.ts). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {/* Marks iOS/iPadOS, whose print path needs the flow print mode (lib/print-environment.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: PRINT_ENVIRONMENT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

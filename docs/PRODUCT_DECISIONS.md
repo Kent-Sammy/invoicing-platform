@@ -358,6 +358,15 @@ shadcn/ui re-initialised with Radix primitives (`radix-nova` style, `radix-ui` p
   - The mark alone, on a white rounded tile, is the favicon (`app/icon.svg`); the default `favicon.ico` was removed.
 - The hero eyebrow "INVOICE PLATFORM" is kept as a category label.
 
+## 031 — iOS / iPadOS printing: flow print mode
+
+**Status:** Decided by product owner · 2026-10-10
+
+- **Problem:** on iPhone, a one-page invoice printed onto two pages, and elements shifted. The cause is iOS Safari's print path: AirPrint margins instead of `@page margin: 0`, a wider-than-paper layout shrunk to fit, no padding clone across pages, and fixed elements printed once against the screen.
+- **Fix (CSS only, iOS/iPadOS only):** keep the sheet's designed width and scale it uniformly (0.85), don't force the full A4 height, and anchor artwork to the sheet. Text stays vector and selectable, and links, the QR code and backgrounds are kept wherever iOS prints them.
+- **Trade-offs on iOS:** the footer follows the content rather than sitting at the foot of page one. Full-bleed paper colour stops at the printer's margin. The invoice prints slightly smaller than on desktop.
+- **Not chosen:** server-side PDF generation (it would send invoice data to a server) and image-based PDFs (soft text, no live links).
+
 ---
 
 ## Open decisions
